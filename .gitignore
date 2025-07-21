@@ -1,0 +1,43 @@
+# === Python / Django ===
+venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.migrations/
+.env
+.env.*
+
+# === Django static/media (si tu utilises ces dossiers) ===
+staticfiles/
+media/
+
+# === Node / React / Vite ===
+# (pour le dossier frontend)
+travelmap-frontend/node_modules/
+travelmap-frontend/dist/
+travelmap-frontend/.env
+travelmap-frontend/.env.*
+
+# === OS / Editeurs ===
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+*.tmp
+.idea/
+.vscode/
+
+# === Autres fichiers temporaires ===
+*.orig
+*.~*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log* 
