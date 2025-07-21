@@ -26,7 +26,7 @@ travelmap/
 
 ### 1. Cloner le dépôt
 ```bash
-git clone <https://github.com/ourouchy/travelmap>
+git clone https://github.com/ourouchy/travelmap
 cd travelmap
 ```
 
