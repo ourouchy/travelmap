@@ -5,12 +5,13 @@ import Login from './Login';
 import Register from './Register';
 import Trip from './Trip';
 import Profile from './Profile';
-import Navbar from './Navbar'; // Importez le nouveau composant Navbar
+import Navbar from './Navbar';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('Index');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [user, setUser] = useState(null);
 
   // Charger le thème sauvegardé
   useEffect(() => {
@@ -18,6 +19,17 @@ const App = () => {
     if (savedTheme) {
       setIsDarkMode(savedTheme === 'dark');
       document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  }, []);
+
+  // Vérifier l'authentification au chargement
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('user');
+    
+    if (token && userData) {
+      setIsAuthenticated(true);
+      setUser(JSON.parse(userData));
     }
   }, []);
 
@@ -29,22 +41,21 @@ const App = () => {
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
   const handleLogin = (token) => {
-    localStorage.setItem('authToken', token);
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
     setIsAuthenticated(true);
     setCurrentPage('Index');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
     setIsAuthenticated(false);
+    setUser(null);
     setCurrentPage('Index');
   };
 
@@ -54,10 +65,11 @@ const App = () => {
       case 'Login': return <Login onLogin={handleLogin} onNavigate={setCurrentPage} />;
       case 'Register': return <Register onRegister={handleLogin} onNavigate={setCurrentPage} />;
       case 'Trip': return <Trip />;
-      case 'Profile': return <Profile onLogout={handleLogout} />;
+      case 'Profile': return <Profile onLogout={handleLogout} user={user} />;
       default: return <Index />;
     }
   };
+
   return (
     <div className={`app ${isDarkMode ? 'dark' : 'light'}`}>
       <Navbar 
@@ -66,6 +78,7 @@ const App = () => {
         handleLogout={handleLogout}
         toggleTheme={toggleTheme}
         isDarkMode={isDarkMode}
+        user={user}
       />
       
       <div>
