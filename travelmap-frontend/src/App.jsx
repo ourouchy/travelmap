@@ -6,6 +6,9 @@ import Register from './Register';
 import Trip from './Trip';
 import Profile from './Profile';
 import Navbar from './Navbar';
+import NotFound from './NotFound';
+import ServerError from './ServerError';
+import Footer from './Footer';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('Index');
@@ -66,7 +69,8 @@ const App = () => {
       case 'Register': return <Register onRegister={handleLogin} onNavigate={setCurrentPage} />;
       case 'Trip': return <Trip />;
       case 'Profile': return <Profile onLogout={handleLogout} user={user} />;
-      default: return <Index />;
+      case 'ServerError': return <ServerError />; // à terminer pour gérer les erreurs serveur/API
+      default: return <NotFound />;
     }
   };
 
@@ -84,6 +88,7 @@ const App = () => {
       <div>
         {renderPage()}
       </div>
+      <Footer />      
     </div>
   );
 };
