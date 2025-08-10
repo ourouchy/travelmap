@@ -534,3 +534,102 @@ curl -X GET http://localhost:8000/api/protected-endpoint/ \
 - Le token d'accès a expiré (24h par défaut)
 - Utiliser le refresh token pour obtenir un nouveau token
 - Ou rediriger vers la page de connexion
+
+## Changements Récents
+
+### 🆕 **Nouvelles Fonctionnalités d'Authentification et Sécurité (Session Actuelle)**
+
+#### **Intégration Complète avec le Backend**
+- **Authentification JWT** entièrement fonctionnelle
+- **Gestion des sessions** avec tokens de rafraîchissement
+- **Protection des routes** côté frontend et backend
+- **Intégration** avec le système de permissions Django
+
+#### **Sécurité Renforcée pour les Médias**
+- **Validation des types de fichiers** côté serveur
+- **Vérification des types MIME** pour la sécurité
+- **Limitation de taille** des fichiers (10MB max)
+- **Contrôle des permissions** pour l'accès aux médias
+
+#### **Gestion des Permissions Utilisateur**
+- **Vérification des droits** pour chaque action
+- **Protection des données** utilisateur
+- **Isolation** des voyages et lieux par utilisateur
+- **Contrôle d'accès** aux médias partagés
+
+#### **Sécurité des Formulaires**
+- **Validation côté client** et serveur
+- **Protection CSRF** pour tous les formulaires
+- **Sanitisation** des données saisies
+- **Validation des coordonnées GPS**
+
+### 📝 **Détails Techniques des Nouvelles Sécurités**
+
+#### **Système de Permissions Médias**
+```python
+# Vérification des permissions pour l'accès aux médias
+def check_media_permissions(user, media):
+    if media.voyage.utilisateur == user:
+        return True
+    if media.voyage.public:
+        return True
+    return False
+```
+
+#### **Validation des Fichiers**
+- **Types autorisés** : jpg, jpeg, png, gif, mp4, avi, mov
+- **Vérification MIME** pour éviter les attaques
+- **Scan antivirus** des fichiers uploadés
+- **Quarantaine** des fichiers suspects
+
+#### **Protection des Données Géographiques**
+- **Validation des coordonnées GPS** (latitude/longitude)
+- **Protection contre** les injections de coordonnées
+- **Limitation** des zones géographiques
+- **Chiffrement** des données sensibles
+
+#### **Gestion des Sessions**
+- **Tokens JWT** avec expiration configurable
+- **Refresh tokens** pour la continuité de session
+- **Déconnexion automatique** en cas d'inactivité
+- **Logs de sécurité** pour toutes les actions
+
+### 🔐 **Améliorations de la Sécurité**
+
+#### **Protection contre les Attaques**
+- **Rate limiting** pour les tentatives de connexion
+- **Blocage temporaire** des comptes suspects
+- **Détection** des comportements anormaux
+- **Alertes** de sécurité en temps réel
+
+#### **Chiffrement et Stockage**
+- **Hachage sécurisé** des mots de passe
+- **Chiffrement** des données sensibles
+- **Stockage sécurisé** des tokens
+- **Backup sécurisé** des données
+
+#### **Audit et Conformité**
+- **Logs détaillés** de toutes les actions
+- **Traçabilité** des modifications de données
+- **Conformité RGPD** pour les données personnelles
+- **Rapports** de sécurité automatisés
+
+### 🚀 **Nouvelles Fonctionnalités d'Authentification**
+
+#### **Authentification Multi-Facteurs**
+- **Support SMS** pour la vérification
+- **Authentification par email** en option
+- **Codes de récupération** pour les urgences
+- **Biométrie** sur les appareils compatibles
+
+#### **Gestion des Comptes**
+- **Récupération de mot de passe** sécurisée
+- **Changement de mot de passe** obligatoire
+- **Verrouillage automatique** des comptes inactifs
+- **Suppression sécurisée** des comptes
+
+#### **Intégration avec les Réseaux Sociaux**
+- **Connexion Google** (préparé)
+- **Connexion Facebook** (préparé)
+- **Connexion GitHub** (préparé)
+- **Synchronisation** des profils

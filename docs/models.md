@@ -454,3 +454,59 @@ assert user.voyages.count() == 1
 ```
 
 Cette architecture de modèles fournit une base solide et extensible pour l'application TravelMap, permettant une gestion efficace des données géographiques, des voyages utilisateur et des interactions sociales. 
+
+## Changements Récents
+
+### 🆕 **Nouvelles Fonctionnalités Implémentées (Session Actuelle)**
+
+#### **Gestion des Médias (Photos/Vidéos)**
+- **Modèle `MediaVoyage`** : Nouveau modèle pour stocker les médias des voyages
+  - Support des images (jpg, jpeg, png, gif) et vidéos (mp4, avi, mov)
+  - Limite de taille : 10MB maximum
+  - Champs : `fichier`, `type_media`, `voyage`, `lieu` (optionnel)
+  - Validation automatique des types de fichiers
+
+#### **Page Voyage Complète et Fonctionnelle**
+- **Formulaire de création de voyage** avec logique intelligente :
+  - Vérification automatique si le lieu existe déjà
+  - Décision automatique : créer un nouveau lieu ou utiliser l'existant
+  - Gestion des coordonnées GPS et adresses
+  - Intégration des médias (photos/vidéos)
+
+#### **Intégration Cartographique Avancée**
+- **Carte Leaflet dans chaque lieu** :
+  - Affichage automatique de la carte au bon endroit
+  - Marqueurs positionnés selon les coordonnées GPS
+  - Navigation fluide entre les lieux du voyage
+  - Interface responsive et intuitive
+
+#### **Recherche d'Accueil Basée sur le Backend**
+- **Page d'accueil dynamique** :
+  - Récupération des données depuis l'API backend
+  - Affichage des voyages récents et populaires
+  - Intégration complète avec le système d'authentification
+
+#### **Améliorations de l'Interface Utilisateur**
+- **Navigation fluide** entre les composants
+- **Gestion des états** pour les formulaires et les cartes
+- **Validation en temps réel** des données saisies
+- **Responsive design** pour tous les appareils
+
+### 📝 **Détails Techniques des Nouvelles Implémentations**
+
+#### **Backend (Django)**
+- **Serializers étendus** pour la gestion des médias
+- **API endpoints** pour l'upload et la récupération des fichiers
+- **Validation des données** côté serveur
+- **Gestion des permissions** pour l'accès aux médias
+
+#### **Frontend (React)**
+- **Composants Map** avec intégration Leaflet
+- **Gestion des formulaires** avec validation
+- **Upload de fichiers** avec barre de progression
+- **Navigation entre les pages** avec React Router
+
+#### **Base de Données**
+- **Nouvelle table `media_voyage`** pour stocker les médias
+- **Relations** avec les modèles Voyage et Lieu
+- **Indexation** pour les performances de recherche 

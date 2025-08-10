@@ -12,9 +12,10 @@ from .serializers import (
     RegisterSerializer, LoginSerializer, UserSerializer,
     PaysSerializer, LieuSerializer, LieuListSerializer,
     VoyageSerializer, VoyageCreateSerializer,
-    FavoriSerializer, FavoriCreateSerializer, UserStatsSerializer
+    FavoriSerializer, FavoriCreateSerializer, UserStatsSerializer,
+    VoyageCreateWithMediaSerializer
 )
-from .models import Pays, Lieu, Voyage, Favori
+from .models import Pays, Lieu, Voyage, Favori, MediaVoyage
 
 def ping(request):
     return JsonResponse({"message": "pong"})
@@ -121,23 +122,20 @@ class VoyageViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         """Utilise un serializer différent selon l'action"""
         if self.action == 'create':
-            return VoyageCreateSerializer
+            return VoyageCreateWithMediaSerializer
         return VoyageSerializer
     
-    def perform_create(self, serializer):
-        """Crée un voyage en assignant l'utilisateur connecté"""
-        lieu_id = serializer.validated_data['lieu_id']
-        lieu = get_object_or_404(Lieu, id=lieu_id)
-        
-        voyage = Voyage.objects.create(
-            utilisateur=self.request.user,
-            lieu=lieu,
-            date_debut=serializer.validated_data['date_debut'],
-            date_fin=serializer.validated_data.get('date_fin'),
-            note=serializer.validated_data.get('note'),
-            commentaire=serializer.validated_data.get('commentaire', '')
-        )
-        return voyage
+    # Suppression de perform_create car VoyageCreateWithMediaSerializer gère déjà la création
+    
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
+    def detail_public(self, request, pk=None):
+        """Récupère les détails publics d'un voyage (accessible à tous)"""
+        try:
+            voyage = Voyage.objects.get(id=pk)
+            serializer = self.get_serializer(voyage)
+            return Response(serializer.data)
+        except Voyage.DoesNotExist:
+            return Response({'error': 'Voyage non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
 class FavoriViewSet(viewsets.ModelViewSet):
     """ViewSet pour les favoris"""
@@ -191,14 +189,13 @@ class LieuDetailView(APIView):
         if request.user.is_authenticated:
             is_favori = Favori.objects.filter(utilisateur=request.user, lieu=lieu).exists()
         
-        # Récupérer les voyages de l'utilisateur pour ce lieu
-        user_voyages = []
-        if request.user.is_authenticated:
-            user_voyages = Voyage.objects.filter(utilisateur=request.user, lieu=lieu)
+        # Récupérer TOUS les voyages pour ce lieu (pas seulement ceux de l'utilisateur connecté)
+        all_voyages = Voyage.objects.filter(lieu=lieu)
         
         lieu_data = LieuSerializer(lieu).data
         lieu_data['is_favori'] = is_favori
-        lieu_data['user_voyages'] = VoyageSerializer(user_voyages, many=True).data
+        lieu_data['user_voyages'] = VoyageSerializer(all_voyages, many=True).data
+        lieu_data['total_voyages'] = all_voyages.count()
         
         return Response(lieu_data)
 

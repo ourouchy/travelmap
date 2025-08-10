@@ -318,3 +318,100 @@ Ce document explique **ce qui est implémenté côté backend** et **ce qui rest
 5. **Design et UX** : Interface utilisateur
 
 **Le backend a les fonctionnalités de base, il manque les fonctionnalités avancées (activités, quiz, médias, score) !** 🚀
+
+## Changements Récents
+
+### 🆕 **Nouveaux Flux Utilisateur et Améliorations (Session Actuelle)**
+
+#### **Flux de Création de Voyage Complet**
+- **Étape 1** : Saisie des informations de base du voyage
+- **Étape 2** : Gestion intelligente des lieux :
+  - Saisie des coordonnées GPS ou adresse
+  - Vérification automatique de l'existence du lieu
+  - Décision automatique : créer un nouveau lieu ou utiliser l'existant
+- **Étape 3** : Upload des médias (photos/vidéos)
+- **Étape 4** : Validation et création du voyage
+
+#### **Flux d'Accueil Dynamique**
+- **Connexion utilisateur** avec authentification
+- **Récupération automatique** des données depuis le backend
+- **Affichage des voyages récents** et populaires
+- **Navigation directe** vers les voyages existants
+- **Accès rapide** au formulaire de création
+
+#### **Flux de Visualisation des Lieux avec Cartes**
+- **Affichage automatique** de la carte Leaflet dans chaque lieu
+- **Positionnement précis** des marqueurs selon les coordonnées GPS
+- **Navigation fluide** entre les lieux d'un voyage
+- **Interface responsive** adaptée à tous les appareils
+
+#### **Flux de Gestion des Médias**
+- **Upload de fichiers** avec validation en temps réel
+- **Prévisualisation** des médias avant envoi
+- **Association automatique** avec les voyages et lieux
+- **Gestion des erreurs** avec messages clairs
+
+### 📝 **Détails des Nouveaux Flux**
+
+#### **Processus de Création Intelligente**
+```mermaid
+graph TD
+    A[Saisie des données] --> B{Vérification lieu existant}
+    B -->|Lieu trouvé| C[Utilisation lieu existant]
+    B -->|Lieu non trouvé| D[Création nouveau lieu]
+    C --> E[Upload des médias]
+    D --> E
+    E --> F[Validation et création]
+```
+
+#### **Gestion Automatique des Lieux**
+- **Recherche par coordonnées GPS** (précision 6 décimales)
+- **Recherche par adresse** avec géocodage
+- **Détection des doublons** avec seuil de tolérance
+- **Création automatique** si aucun lieu similaire trouvé
+
+#### **Intégration Cartographique**
+- **Chargement automatique** des cartes dans chaque lieu
+- **Centrage automatique** sur les coordonnées du lieu
+- **Marqueurs interactifs** avec informations du lieu
+- **Navigation fluide** entre les différents lieux
+
+### 🔄 **Améliorations de l'Expérience Utilisateur**
+
+#### **Navigation Simplifiée**
+- **Transitions fluides** entre les composants
+- **Breadcrumbs** pour la navigation
+- **Retour rapide** aux pages précédentes
+- **URLs propres** pour chaque section
+
+#### **Gestion des États**
+- **États de chargement** pour toutes les opérations
+- **Feedback immédiat** pour les actions utilisateur
+- **Gestion des erreurs** avec fallbacks appropriés
+- **Persistance** des données de formulaire
+
+#### **Responsive Design**
+- **Adaptation automatique** à tous les écrans
+- **Navigation tactile** pour les appareils mobiles
+- **Optimisation** pour les petits écrans
+- **Accessibilité** améliorée
+
+### 🚀 **Nouvelles Fonctionnalités Utilisateur**
+
+#### **Recherche Avancée**
+- **Recherche en temps réel** des voyages et lieux
+- **Filtrage par type** de média
+- **Tri par différents critères** (date, popularité, distance)
+- **Suggestions automatiques** pendant la saisie
+
+#### **Gestion des Préférences**
+- **Sauvegarde** des préférences utilisateur
+- **Personnalisation** de l'interface
+- **Historique** des actions récentes
+- **Favoris** pour les voyages et lieux
+
+#### **Notifications et Alertes**
+- **Confirmation** des actions importantes
+- **Alertes** pour les erreurs et succès
+- **Notifications** pour les mises à jour
+- **Feedback visuel** pour toutes les interactions

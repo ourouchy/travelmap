@@ -394,3 +394,74 @@ curl -X POST "http://localhost:8000/api/favoris/" \
 curl "http://localhost:8000/api/profile/" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ``` 
+
+## Changements Récents
+
+### 🆕 **Nouveaux Endpoints et Fonctionnalités API (Session Actuelle)**
+
+#### **Gestion des Médias**
+- **`POST /api/media/upload/`** : Upload de fichiers médias
+  - Support des images (jpg, jpeg, png, gif) et vidéos (mp4, avi, mov)
+  - Limite de taille : 10MB maximum
+  - Validation automatique des types de fichiers
+  - Association automatique avec un voyage et lieu (optionnel)
+
+- **`GET /api/media/voyage/{voyage_id}/`** : Récupération des médias d'un voyage
+  - Retourne tous les médias associés à un voyage spécifique
+  - Inclut les métadonnées (type, taille, date de création)
+  - Filtrage par type de média (image/vidéo)
+
+- **`DELETE /api/media/{media_id}/`** : Suppression d'un média
+  - Suppression du fichier et de l'enregistrement en base
+  - Vérification des permissions utilisateur
+
+#### **Améliorations des Endpoints Existants**
+- **`POST /api/voyages/`** : Création de voyage avec logique intelligente
+  - Vérification automatique de l'existence du lieu
+  - Création automatique du lieu si nécessaire
+  - Gestion des coordonnées GPS et adresses
+  - Intégration des médias dans la création
+
+- **`GET /api/voyages/`** : Récupération des voyages avec données enrichies
+  - Inclusion des médias associés
+  - Informations complètes sur les lieux
+  - Tri par date de création et popularité
+
+#### **Nouveaux Endpoints de Recherche**
+- **`GET /api/accueil/`** : Données de la page d'accueil
+  - Voyages récents et populaires
+  - Statistiques utilisateur
+  - Recommandations personnalisées
+
+#### **Gestion des Permissions et Sécurité**
+- **Validation des fichiers** côté serveur
+- **Vérification des types MIME** pour la sécurité
+- **Gestion des permissions** pour l'accès aux médias
+- **Rate limiting** pour les uploads
+
+### 📝 **Détails Techniques des Nouvelles API**
+
+#### **Format des Réponses Médias**
+```json
+{
+  "id": 1,
+  "fichier": "https://example.com/media/voyage_1_photo.jpg",
+  "type_media": "image",
+  "voyage": 1,
+  "lieu": 1,
+  "date_creation": "2024-01-15T10:30:00Z",
+  "taille_fichier": 2048576
+}
+```
+
+#### **Gestion des Erreurs**
+- **400 Bad Request** : Type de fichier non supporté
+- **413 Payload Too Large** : Fichier trop volumineux
+- **403 Forbidden** : Permissions insuffisantes
+- **500 Internal Server Error** : Erreur lors du traitement
+
+#### **Performance et Optimisation**
+- **Compression automatique** des images
+- **Thumbnails** générés automatiquement
+- **CDN** pour la distribution des médias
+- **Cache** pour les métadonnées fréquemment consultées 

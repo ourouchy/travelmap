@@ -6,12 +6,15 @@ import Register from './Register';
 import Trip from './Trip';
 import Profile from './Profile';
 import Navbar from './Navbar';
+import Lieu from './Lieu';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('Index');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [user, setUser] = useState(null);
+  const [lieuData, setLieuData] = useState(null);
+  const [lieuId, setLieuId] = useState(null);
 
   // Charger le thème sauvegardé
   useEffect(() => {
@@ -59,14 +62,36 @@ const App = () => {
     setCurrentPage('Index');
   };
 
+  // Fonction pour naviguer vers un lieu
+  const navigateToLieu = (lieuId, lieuData) => {
+    setLieuId(lieuId);
+    setLieuData(lieuData);
+    setCurrentPage('Lieu');
+  };
+
+  // Fonction pour retourner à l'accueil
+  const navigateBackToIndex = () => {
+    setCurrentPage('Index');
+    setLieuId(null);
+    setLieuData(null);
+  };
+
   const renderPage = () => {
     switch(currentPage) {
-      case 'Index': return <Index />;
-      case 'Login': return <Login onLogin={handleLogin} onNavigate={setCurrentPage} />;
-      case 'Register': return <Register onRegister={handleLogin} onNavigate={setCurrentPage} />;
-      case 'Trip': return <Trip />;
-      case 'Profile': return <Profile onLogout={handleLogout} user={user} />;
-      default: return <Index />;
+      case 'Index': 
+        return <Index onNavigateToLieu={navigateToLieu} />;
+      case 'Login': 
+        return <Login onLogin={handleLogin} onNavigate={setCurrentPage} />;
+      case 'Register': 
+        return <Register onRegister={handleLogin} onNavigate={setCurrentPage} />;
+      case 'Trip': 
+        return <Trip />;
+      case 'Profile': 
+        return <Profile onLogout={handleLogout} user={user} />;
+      case 'Lieu': 
+        return <Lieu lieuId={lieuId} lieuData={lieuData} onNavigateBack={navigateBackToIndex} />;
+      default: 
+        return <Index onNavigateToLieu={navigateToLieu} />;
     }
   };
 

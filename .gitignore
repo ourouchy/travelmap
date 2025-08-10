@@ -1,43 +1,66 @@
-# === Python / Django ===
-venv/
-__pycache__/
-*.py[cod]
-*.sqlite3
-db.sqlite3
+# Media files
+media/
+media/voyages_medias/
+
+# Django
 *.log
 *.pot
 *.pyc
-*.pyo
-*.pyd
-*.migrations/
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Environment variables
 .env
-.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# === Django static/media (si tu utilises ces dossiers) ===
-staticfiles/
-media/
-
-# === Node / React / Vite ===
-# (pour le dossier frontend)
-travelmap-frontend/node_modules/
-travelmap-frontend/dist/
-travelmap-frontend/.env
-travelmap-frontend/.env.*
-
-# === OS / Editeurs ===
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-*.bak
-*.tmp
-.idea/
-.vscode/
-
-# === Autres fichiers temporaires ===
-*.orig
-*.~*
+# Node modules
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log* 
+
+# Build outputs
+dist/
+build/
+*.tgz
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/ 

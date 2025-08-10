@@ -48,6 +48,34 @@ class Lieu(models.Model):
             return voyages_notes.aggregate(models.Avg('note'))['note__avg']
         return None
 
+class MediaVoyage(models.Model):
+    """Media model for voyage images and videos"""
+    MEDIA_TYPES = [
+        ('image', 'Image'),
+        ('video', 'Vidéo'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    voyage = models.ForeignKey('Voyage', on_delete=models.CASCADE, related_name='medias')
+    fichier = models.FileField(upload_to='voyages_medias/')
+    type_media = models.CharField(max_length=10, choices=MEDIA_TYPES)
+    titre = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    date_upload = models.DateTimeField(auto_now_add=True)
+    ordre = models.PositiveIntegerField(default=0, help_text="Ordre d'affichage")
+    
+    class Meta:
+        verbose_name = "Média de voyage"
+        verbose_name_plural = "Médias de voyage"
+        ordering = ['ordre', 'date_upload']
+    
+    def __str__(self):
+        return f"{self.voyage} - {self.get_type_media_display()}"
+    
+    def get_url(self):
+        """Retourne l'URL du fichier"""
+        return self.fichier.url if self.fichier else None
+
 class Voyage(models.Model):
     """Trip model - Enregistrement d'une visite d'un lieu par un utilisateur"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -74,6 +102,14 @@ class Voyage(models.Model):
         """Validation des dates de voyage"""
         if self.date_fin and self.date_fin < self.date_debut:
             raise ValidationError('La date de fin ne peut pas être antérieure à la date de début')
+    
+    def get_medias_images(self):
+        """Retourne les images du voyage"""
+        return self.medias.filter(type_media='image').order_by('ordre')
+    
+    def get_medias_videos(self):
+        """Retourne les vidéos du voyage"""
+        return self.medias.filter(type_media='video').order_by('ordre')
 
 class Favori(models.Model):
     """Favorite place model - Lieux marqués comme favoris par l'utilisateur"""
