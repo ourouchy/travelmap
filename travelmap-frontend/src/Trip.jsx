@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './App.css'; // Importer le fichier CSS pour les styles
 
 const Trip = () => {
   const [selectedLieu, setSelectedLieu] = useState(null);
@@ -489,15 +490,9 @@ const Trip = () => {
   // Affichage de chargement
   if (isLoadingAuth) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        flexDirection: 'column'
-      }}>
-        <div style={{ fontSize: '1.2em', marginBottom: '20px' }}>Chargement...</div>
-        <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #3498db', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+      <div className="trip-loading">
+        <div className="trip-loading-text">Chargement...</div>
+        <div className="trip-spinner"></div>
       </div>
     );
   }
@@ -505,118 +500,72 @@ const Trip = () => {
   // Redirection si pas authentifié
   if (!isAuthenticated) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        flexDirection: 'column'
-      }}>
-        <div style={{ fontSize: '1.5em', marginBottom: '20px', color: '#dc3545' }}>Accès refusé</div>
+      <div className="trip-auth-refused">
+        <div className="trip-auth-refused-title">Accès refusé</div>
         <p>Connectez-vous pour commencer à documenter vos aventures !</p>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div className="trip-container">
       {/* En-tête */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '30px',
-        flexWrap: 'wrap',
-        gap: '20px'
-      }}>
-        <h1>Mes Voyages</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: showForm ? '#dc3545' : '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '1em',
-            fontWeight: 'bold',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = showForm ? '#c82333' : '#218838'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = showForm ? '#dc3545' : '#28a745'}
-        >
-          {showForm ? 'Annuler' : '➕ Ajouter un voyage'}
-        </button>
+      <div className="trip-header">
+        <h1 className="trip-title">Mes Voyages</h1>
+        {/* Afficher le bouton "Ajouter un voyage" si au moins 1 voyage, 
+            et le bouton "Annuler" si le formulaire est ouvert */}
+        {voyages.length > 0 && !showForm && (
+          <button
+            className="trip-add-btn"
+            onClick={() => setShowForm(true)}
+          >
+            ➕ Ajouter un voyage
+          </button>
+        )}
+        {showForm && (
+          <button
+            className="trip-add-btn trip-add-btn-cancel"
+            onClick={() => setShowForm(false)}
+          >
+            Annuler
+          </button>
+        )}
       </div>
 
       {/* Formulaire d'ajout */}
       {showForm && (
-        <div style={{ 
-          backgroundColor: 'white', 
-          padding: '30px', 
-          borderRadius: '8px', 
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          marginBottom: '30px'
-        }}>
-          <h2 style={{ marginBottom: '20px', color: '#333' }}>Nouveau Voyage</h2>
-          
+        <div className="trip-form-card">
+          <h2 className="trip-form-title">Nouveau Voyage</h2>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div className="trip-form-grid">
               {/* Recherche de lieu via GeoNames */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              <div className="trip-form-group trip-form-group-full">
+                <label className="trip-label">
                   Destination *
                 </label>
-                <div style={{ position: 'relative' }}>
+                <div className="trip-search-wrapper">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={handleSearchChange}
                     placeholder="Rechercher une ville ou un pays via GeoNames..."
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontSize: '1em'
-                    }}
+                    required
+                    className="trip-input"
                   />
-                  
                   {/* Résultats de recherche GeoNames */}
                   {showSearchResults && searchResults.length > 0 && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      right: 0,
-                      backgroundColor: 'white',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      zIndex: 1000,
-                      maxHeight: '200px',
-                      overflowY: 'auto'
-                    }}>
+                    <div className="trip-search-results">
                       {searchResults.map((place, index) => (
                         <div
                           key={`place-${index}`}
                           onClick={() => handlePlaceSelect(place)}
-                          style={{
-                            padding: '10px 15px',
-                            cursor: 'pointer',
-                            borderBottom: '1px solid #eee',
-                            display: 'flex',
-                            flexDirection: 'column'
-                          }}
-                          onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
-                          onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                          className="trip-search-result"
                         >
-                          <div style={{ fontWeight: 'bold' }}>{place.name}</div>
-                          <div style={{ fontSize: '0.9em', color: '#666' }}>
+                          <div className="trip-search-result-title">{place.name}</div>
+                          <div className="trip-search-result-country">
                             {place.countryName} ({place.countryCode})
                           </div>
-                          <div style={{ fontSize: '0.8em', color: '#999' }}>
+                          <div className="trip-search-result-coords">
                             {place.lat}, {place.lng} • {place.fcodeName}
                           </div>
                         </div>
@@ -625,97 +574,52 @@ const Trip = () => {
                   )}
                 </div>
                 {formData.lieu_nom && (
-                  <div style={{ 
-                    marginTop: '8px', 
-                    padding: '12px', 
-                    backgroundColor: '#e8f5e8', 
-                    borderRadius: '4px',
-                    fontSize: '0.9em',
-                    color: '#28a745',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
+                  <div className="trip-lieu-selected">
                     <span>✅ {formData.lieu_nom}</span>
-                    <button
-                      type="button"
-                      onClick={clearLieuSelection}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#dc3545',
-                        cursor: 'pointer',
-                        fontSize: '1.2em',
-                        padding: '0',
-                        marginLeft: '10px'
-                      }}
-                      title="Changer de destination"
-                    >
+                    <button type="button" onClick={clearLieuSelection} className="trip-lieu-clear-btn" title="Changer de destination">
                       ✕
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Date de début */}
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                  Date de début *
-                </label>
-                <input
-                  type="date"
-                  name="date_debut"
-                  value={formData.date_debut}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '1em'
-                  }}
-                />
+              {/* Dates de début et de fin */}
+              <div className="trip-form-group-row trip-form-group-full">
+                <div className="trip-form-group">
+                  <label className="trip-label">
+                    Date de début *
+                  </label>
+                  <input
+                    type="date"
+                    name="date_debut"
+                    value={formData.date_debut}
+                    onChange={handleInputChange}
+                    required
+                    className="trip-input-date"
+                  />
+                </div>
+                <div className="trip-form-group">
+                  <label className="trip-label">
+                    Date de fin (optionnel)
+                  </label>
+                  <input
+                    type="date"
+                    name="date_fin"
+                    value={formData.date_fin}
+                    onChange={handleInputChange}
+                    min={formData.date_debut}
+                    className="trip-input-date"
+                  />
+                </div>
               </div>
 
-              {/* Date de fin */}
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                  Date de fin (optionnel)
-                </label>
-                <input
-                  type="date"
-                  name="date_fin"
-                  value={formData.date_fin}
-                  onChange={handleInputChange}
-                  min={formData.date_debut}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '1em'
-                  }}
-                />
-              </div>
 
               {/* Note */}
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              <div className="trip-form-group">
+                <label className="trip-label">
                   Note (optionnel)
                 </label>
-                <select
-                  name="note"
-                  value={formData.note}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '1em'
-                  }}
-                >
+                <select name="note" value={formData.note} onChange={handleInputChange} className="trip-input">
                   <option value="">Sélectionner une note</option>
                   <option value="1">⭐ 1 - Très décevant</option>
                   <option value="2">⭐⭐ 2 - Décevant</option>
@@ -726,8 +630,8 @@ const Trip = () => {
               </div>
 
               {/* Commentaire */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              <div className="trip-form-group trip-form-group-full">
+                <label className="trip-label">
                   Commentaire (optionnel)
                 </label>
                 <textarea
@@ -736,51 +640,33 @@ const Trip = () => {
                   onChange={handleInputChange}
                   placeholder="Partagez vos impressions sur ce voyage..."
                   rows="3"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '1em',
-                    resize: 'vertical'
-                  }}
+                  className="trip-input"
+                  style={{ resize: 'vertical' }}
                 />
               </div>
             </div>
 
             {/* Section Upload de médias */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                fontWeight: 'bold',
-                color: '#333'
-              }}>
+            <div className="trip-media-upload">
+              <label className="trip-label">
                 Photos et vidéos (optionnel)
               </label>
-              
-              <div style={{
-                border: '2px dashed #ddd',
-                borderRadius: '8px',
-                padding: '20px',
-                textAlign: 'center',
-                backgroundColor: '#f8f9fa',
-                transition: 'border-color 0.2s'
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.currentTarget.style.borderColor = '#007bff';
-              }}
-              onDragLeave={(e) => {
-                e.currentTarget.style.borderColor = '#ddd';
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.currentTarget.style.borderColor = '#ddd';
-                const files = Array.from(e.dataTransfer.files);
-                setSelectedFiles(prev => [...prev, ...files]);
-                handleFileSelect({ target: { files } });
-              }}
+              <div
+                className="trip-media-dropzone"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.add("trip-media-dropzone-active");
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.classList.remove("trip-media-dropzone-active");
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove("trip-media-dropzone-active");
+                  const files = Array.from(e.dataTransfer.files);
+                  setSelectedFiles(prev => [...prev, ...files]);
+                  handleFileSelect({ target: { files } });
+                }}
               >
                 <input
                   type="file"
@@ -790,98 +676,48 @@ const Trip = () => {
                   style={{ display: 'none' }}
                   id="file-upload"
                 />
-                <label htmlFor="file-upload" style={{
-                  cursor: 'pointer',
-                  color: '#007bff',
-                  fontWeight: '500'
-                }}>
+                <label htmlFor="file-upload" className="trip-media-upload-label">
                   📁 Cliquez pour sélectionner des fichiers
                 </label>
-                <p style={{ margin: '10px 0 0 0', fontSize: '0.9em', color: '#666' }}>
+                <p className="trip-media-upload-desc">
                   ou glissez-déposez vos fichiers ici
                 </p>
-                <p style={{ margin: '5px 0 0 0', fontSize: '0.8em', color: '#999' }}>
+                <p className="trip-media-upload-info">
                   Formats supportés: JPG, PNG, GIF, WebP, MP4, AVI, MOV, WMV (max 10MB par fichier)
                 </p>
               </div>
 
               {/* Prévisualisation des fichiers sélectionnés */}
               {filePreview.length > 0 && (
-                <div style={{ marginTop: '15px' }}>
-                  <h4 style={{ marginBottom: '10px', color: '#333' }}>
+                <div className="trip-media-preview">
+                  <h4 className="trip-media-preview-title">
                     Fichiers sélectionnés ({filePreview.length})
                   </h4>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                    gap: '10px'
-                  }}>
+                  <div className="trip-media-preview-list">
                     {filePreview.map((preview, index) => (
-                      <div key={index} style={{
-                        position: 'relative',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        overflow: 'hidden',
-                        backgroundColor: 'white'
-                      }}>
+                      <div key={index} className="trip-media-preview-item">
                         {preview.type === 'image' && preview.preview ? (
                           <img
                             src={preview.preview}
                             alt={`Preview ${index + 1}`}
-                            style={{
-                              width: '100%',
-                              height: '100px',
-                              objectFit: 'cover'
-                            }}
+                            className="trip-media-preview-img"
                           />
                         ) : (
-                          <div style={{
-                            width: '100%',
-                            height: '100px',
-                            backgroundColor: '#f8f9fa',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#666'
-                          }}>
+                          <div className="trip-media-preview-video">
                             🎥 Vidéo
                           </div>
                         )}
-                        
-                        <div style={{
-                          position: 'absolute',
-                          top: '5px',
-                          right: '5px'
-                        }}>
+                        <div className="trip-media-preview-remove">
                           <button
                             type="button"
                             onClick={() => removeFile(index)}
-                            style={{
-                              backgroundColor: '#dc3545',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '50%',
-                              width: '24px',
-                              height: '24px',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
+                            className="trip-media-preview-remove-btn"
                           >
                             ✕
                           </button>
                         </div>
-                        
-                        <div style={{
-                          padding: '5px',
-                          fontSize: '0.8em',
-                          color: '#666',
-                          textAlign: 'center',
-                          backgroundColor: 'rgba(255,255,255,0.9)'
-                        }}>
-                          {preview.file.name.length > 20 
+                        <div className="trip-media-preview-name">
+                          {preview.file.name.length > 20
                             ? preview.file.name.substring(0, 20) + '...'
                             : preview.file.name
                           }
@@ -889,20 +725,10 @@ const Trip = () => {
                       </div>
                     ))}
                   </div>
-                  
                   <button
                     type="button"
                     onClick={clearFiles}
-                    style={{
-                      marginTop: '10px',
-                      padding: '8px 16px',
-                      backgroundColor: '#6c757d',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '0.9em'
-                    }}
+                    className="trip-media-preview-clear-btn"
                   >
                     Effacer tous les fichiers
                   </button>
@@ -911,22 +737,13 @@ const Trip = () => {
             </div>
 
             {/* Bouton de soumission */}
-            <div style={{ textAlign: 'right' }}>
+            <div className="trip-form-submit">
               <button
                 type="submit"
                 disabled={isLoading || !formData.lieu_data || !formData.date_debut}
-                style={{
-                  padding: '12px 30px',
-                  backgroundColor: isLoading || !formData.lieu_data || !formData.date_debut ? '#6c757d' : '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: isLoading || !formData.lieu_data || !formData.date_debut ? 'not-allowed' : 'pointer',
-                  fontSize: '1em',
-                  fontWeight: 'bold'
-                }}
+                className="trip-submit-btn"
               >
-                {isLoading ? 'Création...' : 'Créer le voyage'}
+                {isLoading ? 'Création...' : 'Enregistrer votre voyage ✈️'}
               </button>
             </div>
           </form>
@@ -935,169 +752,85 @@ const Trip = () => {
 
       {/* Messages d'erreur */}
       {error && (
-        <div style={{ 
-          padding: '15px', 
-          backgroundColor: '#f8d7da', 
-          color: '#721c24', 
-          borderRadius: '4px', 
-          marginBottom: '20px',
-          border: '1px solid #f5c6cb'
-        }}>
+        <div className="trip-error-message">
           {error}
         </div>
       )}
 
       {/* Liste des voyages */}
       <div>
-        <h2 style={{ marginBottom: '20px', color: '#333' }}>
-          Voyages enregistrés ({voyages.length})
-        </h2>
+        {voyages.length > 1 && (
+          <h2 className="trip-list-title">
+            Voyages enregistrés ({voyages.length})
+          </h2>
+        )}
 
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div className="trip-list-loading">
             <div>Chargement de vos voyages...</div>
           </div>
         ) : voyages.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '60px 20px', 
-            backgroundColor: '#f8f9fa', 
-            borderRadius: '8px',
-            color: '#6c757d'
-          }}>
-            <div style={{ fontSize: '3em', marginBottom: '20px' }}>✈️</div>
+          <div className="trip-list-empty">
+            <div className="trip-list-empty-icon">✈️</div>
             <h3>Aucun voyage enregistré</h3>
             <p>Commencez par ajouter votre premier voyage pour documenter vos aventures !</p>
-            <button
-              onClick={() => setShowForm(true)}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '1em',
-                marginTop: '20px'
-              }}
-            >
-              Ajouter mon premier voyage
+            <button onClick={() => setShowForm(true)} className="trip-list-empty-btn">
+              ➕ Ajouter mon premier voyage
             </button>
           </div>
         ) : (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', 
-            gap: '20px' 
-          }}>
+          <div className="trip-list-grid">
             {voyages.map((voyage) => (
               <div
                 key={voyage.id}
-                style={{
-                  backgroundColor: 'white',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  padding: '20px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.2s, box-shadow 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                }}
+                className="trip-card"
               >
                 {/* En-tête avec lieu et note */}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'flex-start',
-                  marginBottom: '15px'
-                }}>
+                <div className="trip-card-header">
                   <div>
-                    <h3 style={{ margin: '0 0 5px 0', color: '#333' }}>
+                    <h3 className="trip-card-title">
                       {voyage.lieu.nom_ville}
                     </h3>
-                    <p style={{ margin: '0', color: '#666', fontSize: '0.9em' }}>
+                    <p className="trip-card-country">
                       {voyage.lieu.pays.nom}
                     </p>
                   </div>
                   {voyage.note && (
-                    <div style={{ 
-                      backgroundColor: '#ffd700', 
-                      color: '#333',
-                      padding: '6px 10px',
-                      borderRadius: '20px',
-                      fontSize: '0.9em',
-                      fontWeight: 'bold',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px'
-                    }}>
+                    <div className="trip-card-note">
                       ⭐ {voyage.note}/5
                     </div>
                   )}
                 </div>
 
                 {/* Dates */}
-                <div style={{ marginBottom: '15px' }}>
-                  <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '5px' }}>
+                <div className="trip-card-dates">
+                  <div>
                     📅 Du {formatDate(voyage.date_debut)}
                   </div>
                   {voyage.date_fin && (
-                    <div style={{ fontSize: '0.9em', color: '#666' }}>
-                      📅 Au {formatDate(voyage.date_fin)}
+                    <div>
+                      au {formatDate(voyage.date_fin)}
                     </div>
                   )}
                 </div>
 
                 {/* Commentaire */}
                 {voyage.commentaire && (
-                  <div style={{ 
-                    marginBottom: '15px',
-                    padding: '12px',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '6px',
-                    fontSize: '0.9em',
-                    fontStyle: 'italic',
-                    color: '#495057'
-                  }}>
+                  <div className="trip-card-commentaire">
                     💬 "{voyage.commentaire}"
                   </div>
                 )}
 
                 {/* Date de création */}
-                <div style={{ 
-                  fontSize: '0.8em', 
-                  color: '#999', 
-                  marginBottom: '15px',
-                  fontStyle: 'italic'
-                }}>
+                <div className="trip-card-created">
                   Créé le {formatDate(voyage.date_creation)}
                 </div>
 
                 {/* Actions */}
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '10px',
-                  justifyContent: 'flex-end'
-                }}>
+                <div className="trip-card-actions">
                   <button
                     onClick={() => handleDeleteVoyage(voyage.id)}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#dc3545',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '0.9em'
-                    }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
+                    className="trip-card-delete-btn"
                   >
                     🗑️ Supprimer
                   </button>
