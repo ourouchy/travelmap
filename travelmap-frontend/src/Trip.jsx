@@ -617,11 +617,11 @@ const Trip = () => {
 
 
               {/* Note */}
-              <div className="trip-form-group">
-                <label className="trip-label">
+              <div className="trip-form-group-full trip-form-note-group">
+                <label className="trip-label ">
                   Note (optionnel)
                 </label>
-                <select name="note" value={formData.note} onChange={handleInputChange} className="trip-input">
+                <select name="note" value={formData.note} onChange={handleInputChange} className="trip-input trip-note-select">
                   <option value="">Sélectionner une note</option>
                   <option value="1">⭐ 1 - Très décevant</option>
                   <option value="2">⭐⭐ 2 - Décevant</option>

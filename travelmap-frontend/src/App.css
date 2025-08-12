@@ -695,6 +695,7 @@ button:hover {
 
 .trip-list-title {
   margin-bottom: 20px;
+  margin-top: 60px;
   color: var(--primary);
   font-weight: 700;
 }
@@ -882,23 +883,15 @@ button:hover {
   font-weight: bold;
 }
 
-.trip-form-note-row {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-bottom: 18px;
-}
-
 .trip-form-note-group {
-  flex: 0 0 40%;
-  max-width: 40%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .trip-note-select {
-  width: 100%;
+  width: 40%;
   padding: 10px 16px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -924,6 +917,42 @@ button:hover {
   .card {
     padding: 2rem;
   }
+
+  .trip-list-grid {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .trip-list-column {
+    width: 100%;
+  }
+
+  .trip-form-card {
+    padding: 18px 8px;
+    margin-bottom: 80px;
+  }
+
+  .trip-form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .trip-input,
+  .trip-input-date,
+  .trip-media-dropzone {
+    width: 85%;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+  }
+  .trip-note-select {
+    width: 50%;
+  }
+
+  .trip-form-group-row {
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -935,6 +964,8 @@ button:hover {
   .search-container {
     max-width: 95%;
   }
+
+
 }
 
 /* Error message styling */
