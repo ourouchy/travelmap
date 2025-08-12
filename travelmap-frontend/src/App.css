@@ -63,6 +63,12 @@ body {
   align-items: center; 
 }
 
+/* Empêche le décalage lors de l'apparition de la scrollbar verticale */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 /* ========== Navigation ========== */
 
 .navbar-container {
@@ -162,7 +168,20 @@ button:hover {
   box-shadow: var(--shadow);
   padding: 2.5rem;
   border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
 }
+
+.card-content {
+  flex: 1 1 auto;
+}
+
+.card-footer {
+  margin-top: auto;
+}
+
 /* Titres */
 .title {
   color: #DA919F;
@@ -712,9 +731,17 @@ button:hover {
 }
 
 .trip-list-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  display: flex;
   gap: 20px;
+  align-items: flex-start;
+}
+
+.trip-list-column {
+  flex: 1 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 50%;
 }
 
 .trip-card {
@@ -724,26 +751,39 @@ button:hover {
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: auto;
 }
-.trip-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+
+.trip-card-content {
+  flex: 1 1 auto;
 }
+
+.trip-card-footer {
+  margin-top: auto;
+}
+
 .trip-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 15px;
 }
+
 .trip-card-title {
   margin: 0 0 5px 0;
   color: var(--primary);
 }
+
 .trip-card-country {
   margin: 0;
   color: var(--secondary);
   font-size: 0.9em;
+  text-align: left;
 }
+
 .trip-card-note {
   background-color: var(--primary);
   color: var(--text-color);
@@ -775,18 +815,22 @@ button:hover {
   font-size: 0.9em;
   font-style: italic;
   color: var(--text-color);
+  word-break: break-word;
 }
+
 .trip-card-created {
   font-size: 0.8em;
   color: var(--text-color);
   margin-bottom: 15px;
   font-style: italic;
 }
+
 .trip-card-actions {
   display: flex;
   gap: 10px;
   justify-content: center;
 }
+
 .trip-card-delete-btn {
   padding: 8px 16px;
   background-color: #dc3545;
@@ -797,6 +841,7 @@ button:hover {
   font-size: 0.9em;
   transition: background-color 0.2s;
 }
+
 .trip-card-delete-btn:hover {
   background-color: #c82333;
 }

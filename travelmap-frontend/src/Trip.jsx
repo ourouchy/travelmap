@@ -432,7 +432,9 @@ const Trip = () => {
         setShowSearchResults(false);
         setSearchResults([]);
         clearFiles();
-        
+
+        setShowForm(false); // Fermer le formulaire après succès
+
         // Recharger la liste des voyages
         await fetchVoyages();
         
@@ -780,63 +782,125 @@ const Trip = () => {
           </div>
         ) : (
           <div className="trip-list-grid">
-            {voyages.map((voyage) => (
-              <div
-                key={voyage.id}
-                className="trip-card"
-              >
-                {/* En-tête avec lieu et note */}
-                <div className="trip-card-header">
-                  <div>
-                    <h3 className="trip-card-title">
-                      {voyage.lieu.nom_ville}
-                    </h3>
-                    <p className="trip-card-country">
-                      {voyage.lieu.pays.nom}
-                    </p>
-                  </div>
-                  {voyage.note && (
-                    <div className="trip-card-note">
-                      ⭐ {voyage.note}/5
+            {/* Répartition en 2 colonnes */}
+            <div className="trip-list-column">
+              {voyages.filter((_, i) => i % 2 === 0).map((voyage) => (
+                <div key={voyage.id} className="trip-card">
+                  <div className="trip-card-content">
+                    {/* En-tête avec lieu et note */}
+                    <div className="trip-card-header">
+                      <div>
+                        <h3 className="trip-card-title">
+                          {voyage.lieu.nom_ville}
+                        </h3>
+                        <p className="trip-card-country">
+                          {voyage.lieu.pays.nom}
+                        </p>
+                      </div>
+                      {voyage.note && (
+                        <div className="trip-card-note">
+                          ⭐ {voyage.note}/5
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Dates */}
-                <div className="trip-card-dates">
-                  <div>
-                    📅 Du {formatDate(voyage.date_debut)}
-                  </div>
-                  {voyage.date_fin && (
-                    <div>
-                      au {formatDate(voyage.date_fin)}
+                    {/* Dates */}
+                    <div className="trip-card-dates">
+                      <div>
+                        📅 Du {formatDate(voyage.date_debut)}
+                      </div>
+                      {voyage.date_fin && (
+                        <div>
+                          au {formatDate(voyage.date_fin)}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-
-                {/* Commentaire */}
-                {voyage.commentaire && (
-                  <div className="trip-card-commentaire">
-                    💬 "{voyage.commentaire}"
+                    {/* Commentaire */}
+                    {voyage.commentaire && voyage.commentaire.trim() !== "" ? (
+                      <div className="trip-card-commentaire">
+                        💬 "{voyage.commentaire}"
+                      </div>
+                    ) : (
+                      <div className="trip-card-commentaire">
+                        Pas de commentaire en particulier
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {/* Date de création */}
-                <div className="trip-card-created">
-                  Créé le {formatDate(voyage.date_creation)}
+                  <div className="trip-card-footer">
+                    <div className="trip-card-created">
+                      Créé le {formatDate(voyage.date_creation)}
+                    </div>
+                    <div className="trip-card-actions">
+                      <button
+                        onClick={() => handleDeleteVoyage(voyage.id)}
+                        className="trip-card-delete-btn"
+                      >
+                        🗑️ Supprimer
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+            <div className="trip-list-column">
+              {voyages.filter((_, i) => i % 2 === 1).map((voyage) => (
+                <div key={voyage.id} className="trip-card">
+                  <div className="trip-card-content">
+                    {/* En-tête avec lieu et note */}
+                    <div className="trip-card-header">
+                      <div>
+                        <h3 className="trip-card-title">
+                          {voyage.lieu.nom_ville}
+                        </h3>
+                        <p className="trip-card-country">
+                          {voyage.lieu.pays.nom}
+                        </p>
+                      </div>
+                      {voyage.note && (
+                        <div className="trip-card-note">
+                          ⭐ {voyage.note}/5
+                        </div>
+                      )}
+                    </div>
 
-                {/* Actions */}
-                <div className="trip-card-actions">
-                  <button
-                    onClick={() => handleDeleteVoyage(voyage.id)}
-                    className="trip-card-delete-btn"
-                  >
-                    🗑️ Supprimer
-                  </button>
+                    {/* Dates */}
+                    <div className="trip-card-dates">
+                      <div>
+                        📅 Du {formatDate(voyage.date_debut)}
+                      </div>
+                      {voyage.date_fin && (
+                        <div>
+                          au {formatDate(voyage.date_fin)}
+                        </div>
+                      )}
+                    </div>
+                    {/* Commentaire */}
+                    {voyage.commentaire && voyage.commentaire.trim() !== "" ? (
+                      <div className="trip-card-commentaire">
+                        💬 "{voyage.commentaire}"
+                      </div>
+                    ) : (
+                      <div className="trip-card-commentaire">
+                        Pas de commentaire en particulier
+                      </div>
+                    )}
+                  </div>
+                  <div className="trip-card-footer">
+                    <div className="trip-card-created">
+                      Créé le {formatDate(voyage.date_creation)}
+                    </div>
+                    <div className="trip-card-actions">
+                      <button
+                        onClick={() => handleDeleteVoyage(voyage.id)}
+                        className="trip-card-delete-btn"
+                      >
+                        🗑️ Supprimer
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
