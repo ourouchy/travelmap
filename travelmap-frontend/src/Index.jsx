@@ -1,13 +1,55 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Index = ({ onNavigateToLieu }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState({ lieux: [], pays: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const boxRef = useRef(null);
 
+  // --- Historique (objets: {label, type?, id?, payload?}) avec fallback strings ---
+  const [recent, setRecent] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('recent') || '[]');
+      // compat : si c’est un string, on l’enveloppe en {label}
+      return Array.isArray(raw)
+        ? raw.map((it) => (typeof it === 'string' ? { label: it } : it))
+        : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const persistRecent = (items) => {
+    localStorage.setItem('recent', JSON.stringify(items));
+  };
+
+  const saveRecent = (entry) => {
+    // entry attendu: {label, type?, id?, payload?}
+    if (!entry?.label?.trim()) return;
+    const dedup = (arr) => {
+      const seen = new Set();
+      const out = [];
+      for (const it of arr) {
+        const key = it.id ? `${it.type || ''}:${it.id}` : it.label;
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(it);
+        }
+      }
+      return out;
+    };
+    const next = dedup([entry, ...recent]).slice(0, 6);
+    setRecent(next);
+    persistRecent(next);
+  };
+
+  // --- Détection thème sombre ---
+  const isDark = (() => {
+    if (typeof document === 'undefined') return false;
+    return document.documentElement.getAttribute('data-theme') === 'dark';
+  })();
+
+  // --- Recherche backend ---
   const searchPlaces = async (query) => {
     if (!query || query.length < 2) {
       setSearchResults({ lieux: [], pays: [] });
@@ -16,11 +58,33 @@ const Index = ({ onNavigateToLieu }) => {
     }
 
     setIsLoading(true);
+
+    const MOCK = false;
+    if (MOCK) {
+      const data = {
+        lieux: [
+          { id: 1, nom_ville: 'Paris', pays: { nom: 'France' } },
+          { id: 2, nom_ville: 'Paraty', pays: { nom: 'Brésil' } }
+        ],
+        pays: [{ nom: 'Paraguay' }]
+      };
+      setTimeout(() => {
+        setSearchResults(data);
+        setShowResults(true);
+        setIsLoading(false);
+      }, 200);
+      return;
+    }
+
     try {
-      const response = await fetch(`http://localhost:8000/api/search/?q=${encodeURIComponent(query)}`);
+      const response = await fetch(
+        `http://localhost:8000/api/search/?q=${encodeURIComponent(query)}`
+      );
+
       if (response.ok) {
         const data = await response.json();
-        if ((data.lieux?.length || 0) > 0 || (data.pays?.length || 0) > 0) {
+        console.log('API /search =>', data);
+        if ((data.lieux && data.lieux.length > 0) || (data.pays && data.pays.length > 0)) {
           setSearchResults(data);
           setShowResults(true);
         } else {
@@ -33,7 +97,7 @@ const Index = ({ onNavigateToLieu }) => {
         setShowResults(false);
       }
     } catch (error) {
-      console.error('Erreur de connexion à l\'API:', error);
+      console.error("Erreur de connexion à l'API:", error);
       setSearchResults({ lieux: [], pays: [] });
       setShowResults(false);
     } finally {
@@ -41,131 +105,319 @@ const Index = ({ onNavigateToLieu }) => {
     }
   };
 
+  // --- Auto-complétion fantôme ---
+  const ghostText = (() => {
+    if (!searchQuery) return '';
+    const q = searchQuery.toLowerCase();
+    const firstCity = searchResults.lieux[0]?.nom_ville || '';
+    const firstCountry = searchResults.pays[0]?.nom || '';
+    const first = firstCity || firstCountry;
+    if (first && first.toLowerCase().startsWith(q) && first.length > searchQuery.length) {
+      return searchQuery + first.slice(searchQuery.length);
+    }
+    return '';
+  })();
+
+  const handleKeyDown = (e) => {
+    if ((e.key === 'Tab' || e.key === 'ArrowRight') && ghostText) {
+      e.preventDefault();
+      setSearchQuery(ghostText);
+    }
+  };
+
+  // --- Saisie avec debounce ---
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchQuery) searchPlaces(searchQuery);
+      if (searchQuery) {
+        searchPlaces(searchQuery);
+      }
     }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // clic extérieur
-  useEffect(() => {
-    const onClick = (e) => {
-      if (boxRef.current && !boxRef.current.contains(e.target)) {
-        setShowResults(false);
-        setActiveIndex(-1);
-      }
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, []);
-
+  // --- Sélection d'un résultat (API) ---
   const handlePlaceSelect = (place, type) => {
+    console.log(`${type} sélectionné:`, place);
+
     if (type === 'lieu') {
-      setSearchQuery(`${place.nom_ville}, ${place.pays.nom}`);
-      if (onNavigateToLieu) onNavigateToLieu(place.id, place);
+      const label = `${place.nom_ville}, ${place.pays.nom}`;
+      setSearchQuery(label);
+      // on garde id/type/payload pour naviguer depuis l’historique
+      saveRecent({ label, type: 'lieu', id: place.id, payload: place });
+      if (onNavigateToLieu && place.id) {
+        onNavigateToLieu(place.id, place);
+      }
     } else if (type === 'pays') {
-      setSearchQuery(place.nom);
+      const label = place.nom;
+      setSearchQuery(label);
+      // pas de navigation pays pour l’instant
+      saveRecent({ label, type: 'pays', payload: place });
+      console.log('Pays sélectionné, navigation non implémentée pour le moment');
     }
+
     setShowResults(false);
-    setActiveIndex(-1);
   };
 
+  // --- Click sur un item d’historique ---
+  const handleRecentClick = async (item) => {
+    // item = {label, type?, id?, payload?} ou {label} (ancien format)
+    setSearchQuery(item.label);
+
+    if (item.type === 'lieu' && item.id && onNavigateToLieu) {
+      // navigation directe si on a l’id
+      return onNavigateToLieu(item.id, item.payload || null);
+    }
+
+    // fallback : si ancien format (juste label) on re-questionne l’API
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/search/?q=${encodeURIComponent(item.label)}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const first = data?.lieux?.[0];
+        if (first?.id && onNavigateToLieu) {
+          // on en profite pour upgrader l’historique avec id/type
+          saveRecent({
+            label: `${first.nom_ville}, ${first.pays?.nom || ''}`.trim(),
+            type: 'lieu',
+            id: first.id,
+            payload: first
+          });
+          return onNavigateToLieu(first.id, first);
+        }
+      }
+    } catch (e) {
+      console.warn('Recherche de fallback depuis historique échouée:', e);
+    }
+    // sinon : on laisse juste le texte dans la barre
+  };
+
+  // --- Gestion saisie ---
   const handleInputChange = (e) => {
-    setSearchQuery(e.target.value);
-    if (!e.target.value) {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (!value) {
       setShowResults(false);
       setSearchResults({ lieux: [], pays: [] });
     }
   };
 
-  const handleKeyDown = (e) => {
-    const allResults = [
-      ...searchResults.lieux.map((item) => ({ ...item, type: 'lieu' })),
-      ...searchResults.pays.map((item) => ({ ...item, type: 'pays' }))
-    ];
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex((prev) => (prev + 1) % allResults.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex((prev) => (prev - 1 + allResults.length) % allResults.length);
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
-      e.preventDefault();
-      handlePlaceSelect(allResults[activeIndex], allResults[activeIndex].type);
-    } else if (e.key === 'Escape') {
-      setShowResults(false);
-      setActiveIndex(-1);
+  const handleInputFocus = () => {
+    if (searchResults.lieux.length > 0 || searchResults.pays.length > 0) {
+      setShowResults(true);
     }
+  };
+
+  const handleInputBlur = () => {
+    setTimeout(() => setShowResults(false), 200);
   };
 
   const hasResults = searchResults.lieux.length > 0 || searchResults.pays.length > 0;
 
+  // Styles communs pour aligner l’input et le ghost
+  const inputPadding = '8px 12px 8px 36px';
+
   return (
-    <div className="search-container" ref={boxRef}>
-      <h1>Ou partez-vous ?</h1>
-  
-      <div className="searchbox">
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 
-            16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 
-            5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 
-            4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 
-            11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 
-            11.99 14 9.5 14z"/>
+    <div>
+      <h1 style={{ fontFamily: 'cursive' }}>Où partez-vous ?</h1>
+
+      <div className="searchbox" style={{ position: 'relative' }}>
+        {/* Loupe */}
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          style={{
+            position: 'absolute',
+            left: 12,
+            top: 10,
+            opacity: 0.6,
+            pointerEvents: 'none',
+            zIndex: 2
+          }}
+        >
+          <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" fill="none" />
+          <line x1="16.65" y1="16.65" x2="21" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
+
+        {/* Fantôme d'autocomplétion */}
+        {ghostText && (
+          <input
+            value={ghostText}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              padding: inputPadding,
+              border: '1px solid transparent',
+              borderRadius: 4,
+              color: isDark ? '#b7b7b7' : '#999',
+              background: 'transparent',
+              pointerEvents: 'none',
+              zIndex: 0
+            }}
+          />
+        )}
+
+        {/* Input */}
         <input
           autoComplete="off"
           inputMode="search"
-          placeholder="Paris,Kyoto,Dakar..."
+          placeholder="Entrez une destination"
           type="search"
           value={searchQuery}
           onChange={handleInputChange}
-          onFocus={() => { if (hasResults) setShowResults(true); }}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
-          aria-expanded={showResults}
-          aria-activedescendant={activeIndex >= 0 ? `result-${activeIndex}` : undefined}
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            padding: inputPadding,
+            background: 'transparent'
+          }}
         />
+
+        {/* Historique */}
+        {!searchQuery && recent.length > 0 && (
+          <div
+            className="tm-dropdown"
+            style={{
+              position: 'absolute', top: '100%', left: 0, right: 0,
+              backgroundColor: isDark ? '#1f1f1f' : 'white',
+              color: isDark ? '#eaeaea' : 'inherit',
+              border: `1px solid ${isDark ? '#333' : '#ddd'}`,
+              borderRadius: '4px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              zIndex: 1000, maxHeight: '300px', overflowY: 'auto'
+            }}
+          >
+            <div
+              className="tm-header"
+              style={{
+                padding: '8px 15px',
+                background: isDark ? '#242424' : '#f8f9fa',
+                fontWeight: 'bold',
+                fontSize: '0.9em',
+                color: isDark ? '#cfcfcf' : '#666',
+                borderBottom: `1px solid ${isDark ? '#333' : '#eee'}`
+              }}
+            >
+              Recherches récentes
+            </div>
+
+            {recent.map((item, i) => (
+              <div
+                key={`r-${i}`}
+                onClick={() => handleRecentClick(item)}
+                className="tm-item"
+                style={{
+                  padding: '10px 15px',
+                  cursor: 'pointer',
+                  borderBottom: `1px solid ${isDark ? '#2a2a2a' : '#eee'}`
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? '#2a2a2a' : '#f5f5f5'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <div style={{ fontWeight: 'bold' }}>{item.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Résultats API */}
         {showResults && hasResults && (
-          <div className="results">
+          <div
+            className="tm-dropdown"
+            style={{
+              position: 'absolute', top: '100%', left: 0, right: 0,
+              backgroundColor: isDark ? '#1f1f1f' : 'white',
+              color: isDark ? '#eaeaea' : 'inherit',
+              border: `1px solid ${isDark ? '#333' : '#ddd'}`,
+              borderRadius: '4px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              zIndex: 1000, maxHeight: '300px', overflowY: 'auto'
+            }}
+          >
             {isLoading ? (
-              <div className="loading">Recherche en cours...</div>
+              <div style={{ padding: '10px', textAlign: 'center' }}>Recherche en cours...</div>
             ) : (
               <>
                 {searchResults.lieux.length > 0 && (
                   <>
-                    <div className="category">Villes</div>
+                    <div
+                      className="tm-header"
+                      style={{
+                        padding: '8px 15px',
+                        background: isDark ? '#242424' : '#f8f9fa',
+                        fontWeight: 'bold',
+                        fontSize: '0.9em',
+                        color: isDark ? '#cfcfcf' : '#666',
+                        borderBottom: `1px solid ${isDark ? '#333' : '#eee'}`
+                      }}
+                    >
+                      Villes
+                    </div>
                     {searchResults.lieux.map((lieu, index) => (
                       <div
-                        id={`result-${index}`}
                         key={`lieu-${index}`}
-                        className={`result ${activeIndex === index ? 'active' : ''}`}
                         onClick={() => handlePlaceSelect(lieu, 'lieu')}
+                        className="tm-item"
+                        style={{
+                          padding: '10px 15px',
+                          cursor: 'pointer',
+                          borderBottom: `1px solid ${isDark ? '#2a2a2a' : '#eee'}`,
+                          display: 'flex', flexDirection: 'column'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? '#2a2a2a' : '#f5f5f5'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
-                        <strong>{lieu.nom_ville}</strong>
-                        <span>{lieu.pays.nom}</span>
+                        <div style={{ fontWeight: 'bold' }}>{lieu.nom_ville}</div>
+                        <div style={{ fontSize: '0.9em', color: isDark ? '#b8b8b8' : '#666' }}>
+                          {lieu.pays.nom}
+                        </div>
                       </div>
                     ))}
                   </>
                 )}
+
                 {searchResults.pays.length > 0 && (
                   <>
-                    <div className="category">Pays</div>
-                    {searchResults.pays.map((pays, i) => {
-                      const idx = searchResults.lieux.length + i;
-                      return (
-                        <div
-                          id={`result-${idx}`}
-                          key={`pays-${i}`}
-                          className={`result ${activeIndex === idx ? 'active' : ''}`}
-                          onClick={() => handlePlaceSelect(pays, 'pays')}
-                        >
-                          <strong>{pays.nom}</strong>
-                          <span>Pays</span>
-                        </div>
-                      );
-                    })}
+                    <div
+                      className="tm-header"
+                      style={{
+                        padding: '8px 15px',
+                        background: isDark ? '#242424' : '#f8f9fa',
+                        fontWeight: 'bold',
+                        fontSize: '0.9em',
+                        color: isDark ? '#cfcfcf' : '#666',
+                        borderBottom: `1px solid ${isDark ? '#333' : '#eee'}`
+                      }}
+                    >
+                      Pays
+                    </div>
+                    {searchResults.pays.map((pays, index) => (
+                      <div
+                        key={`pays-${index}`}
+                        onClick={() => handlePlaceSelect(pays, 'pays')}
+                        className="tm-item"
+                        style={{
+                          padding: '10px 15px',
+                          cursor: 'pointer',
+                          borderBottom: `1px solid ${isDark ? '#2a2a2a' : '#eee'}`,
+                          display: 'flex', flexDirection: 'column'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? '#2a2a2a' : '#f5f5f5'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <div style={{ fontWeight: 'bold' }}>{pays.nom}</div>
+                        <div style={{ fontSize: '0.9em', color: isDark ? '#b8b8b8' : '#666' }}>Pays</div>
+                      </div>
+                    ))}
                   </>
                 )}
               </>
@@ -178,3 +430,7 @@ const Index = ({ onNavigateToLieu }) => {
 };
 
 export default Index;
+
+
+
+
