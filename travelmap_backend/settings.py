@@ -83,13 +83,14 @@ WSGI_APPLICATION = "travelmap_backend.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'travelmapdb',
-        'USER': 'travelmapuser',
-        'PASSWORD': 'travelmap',
+        'NAME': 'travelmap_db',
+        'USER': 'travelmap_user',
+        'PASSWORD': 'motdepasse',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
+
 
 
 # Password validation

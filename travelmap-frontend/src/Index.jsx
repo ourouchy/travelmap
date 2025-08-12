@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const Index = ({ onNavigateToLieu }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState({ lieux: [], pays: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const boxRef = useRef(null);
 
-  // Fonction pour rechercher avec notre API backend
   const searchPlaces = async (query) => {
     if (!query || query.length < 2) {
       setSearchResults({ lieux: [], pays: [] });
@@ -16,14 +17,10 @@ const Index = ({ onNavigateToLieu }) => {
 
     setIsLoading(true);
     try {
-      // Utilisation de notre API backend Django
-      const response = await fetch(
-        `http://localhost:8000/api/search/?q=${encodeURIComponent(query)}`
-      );
-      
+      const response = await fetch(`http://localhost:8000/api/search/?q=${encodeURIComponent(query)}`);
       if (response.ok) {
         const data = await response.json();
-        if ((data.lieux && data.lieux.length > 0) || (data.pays && data.pays.length > 0)) {
+        if ((data.lieux?.length || 0) > 0 || (data.pays?.length || 0) > 0) {
           setSearchResults(data);
           setShowResults(true);
         } else {
@@ -44,167 +41,131 @@ const Index = ({ onNavigateToLieu }) => {
     }
   };
 
-  // Gestion de la saisie avec debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchQuery) {
-        searchPlaces(searchQuery);
-      }
+      if (searchQuery) searchPlaces(searchQuery);
     }, 300);
-
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // Gestion de la sélection d'un lieu
+  // clic extérieur
+  useEffect(() => {
+    const onClick = (e) => {
+      if (boxRef.current && !boxRef.current.contains(e.target)) {
+        setShowResults(false);
+        setActiveIndex(-1);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
   const handlePlaceSelect = (place, type) => {
-    console.log(`${type} sélectionné:`, place);
-    
     if (type === 'lieu') {
       setSearchQuery(`${place.nom_ville}, ${place.pays.nom}`);
-      // Naviguer vers la page du lieu
-      if (onNavigateToLieu) {
-        onNavigateToLieu(place.id, place);
-      }
+      if (onNavigateToLieu) onNavigateToLieu(place.id, place);
     } else if (type === 'pays') {
       setSearchQuery(place.nom);
-      // Pour les pays, on pourrait naviguer vers une page pays ou rester sur la recherche
-      console.log('Pays sélectionné, navigation non implémentée pour le moment');
     }
-    
     setShowResults(false);
+    setActiveIndex(-1);
   };
 
-  // Gestion de la saisie
   const handleInputChange = (e) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    if (!value) {
+    setSearchQuery(e.target.value);
+    if (!e.target.value) {
       setShowResults(false);
       setSearchResults({ lieux: [], pays: [] });
     }
   };
 
-  // Gestion du focus/blur
-  const handleInputFocus = () => {
-    if (searchResults.lieux.length > 0 || searchResults.pays.length > 0) {
-      setShowResults(true);
+  const handleKeyDown = (e) => {
+    const allResults = [
+      ...searchResults.lieux.map((item) => ({ ...item, type: 'lieu' })),
+      ...searchResults.pays.map((item) => ({ ...item, type: 'pays' }))
+    ];
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev + 1) % allResults.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev - 1 + allResults.length) % allResults.length);
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      handlePlaceSelect(allResults[activeIndex], allResults[activeIndex].type);
+    } else if (e.key === 'Escape') {
+      setShowResults(false);
+      setActiveIndex(-1);
     }
   };
 
-  const handleInputBlur = () => {
-    // Délai pour permettre le clic sur un résultat
-    setTimeout(() => setShowResults(false), 200);
-  };
-
-  // Vérifier s'il y a des résultats
   const hasResults = searchResults.lieux.length > 0 || searchResults.pays.length > 0;
 
   return (
-    <div>
+    <div className="search-container" ref={boxRef}>
       <h1>Ou partez-vous ?</h1>
-      <div className="searchbox" style={{ position: 'relative' }}>
+  
+      <div className="searchbox">
         <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 
+            16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 
+            5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 
+            4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 
+            11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 
+            11.99 14 9.5 14z"/>
         </svg>
-        <input 
-          autocomplete="off" 
-          inputmode="search" 
-          placeholder="Entrez une destination" 
+        <input
+          autoComplete="off"
+          inputMode="search"
+          placeholder="Paris,Kyoto,Dakar..."
           type="search"
           value={searchQuery}
           onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
+          onFocus={() => { if (hasResults) setShowResults(true); }}
+          onKeyDown={handleKeyDown}
+          aria-expanded={showResults}
+          aria-activedescendant={activeIndex >= 0 ? `result-${activeIndex}` : undefined}
         />
-        
-        {/* Résultats de recherche */}
         {showResults && hasResults && (
-          <div style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            backgroundColor: 'white',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            zIndex: 1000,
-            maxHeight: '300px',
-            overflowY: 'auto'
-          }}>
+          <div className="results">
             {isLoading ? (
-              <div style={{ padding: '10px', textAlign: 'center' }}>Recherche en cours...</div>
+              <div className="loading">Recherche en cours...</div>
             ) : (
               <>
-                {/* Affichage des lieux */}
                 {searchResults.lieux.length > 0 && (
                   <>
-                    <div style={{ 
-                      padding: '8px 15px', 
-                      backgroundColor: '#f8f9fa', 
-                      fontWeight: 'bold',
-                      fontSize: '0.9em',
-                      color: '#666',
-                      borderBottom: '1px solid #eee'
-                    }}>
-                      Villes
-                    </div>
+                    <div className="category">Villes</div>
                     {searchResults.lieux.map((lieu, index) => (
                       <div
+                        id={`result-${index}`}
                         key={`lieu-${index}`}
+                        className={`result ${activeIndex === index ? 'active' : ''}`}
                         onClick={() => handlePlaceSelect(lieu, 'lieu')}
-                        style={{
-                          padding: '10px 15px',
-                          cursor: 'pointer',
-                          borderBottom: '1px solid #eee',
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
                       >
-                        <div style={{ fontWeight: 'bold' }}>{lieu.nom_ville}</div>
-                        <div style={{ fontSize: '0.9em', color: '#666' }}>
-                          {lieu.pays.nom}
-                        </div>
+                        <strong>{lieu.nom_ville}</strong>
+                        <span>{lieu.pays.nom}</span>
                       </div>
                     ))}
                   </>
                 )}
-
-                {/* Affichage des pays */}
                 {searchResults.pays.length > 0 && (
                   <>
-                    <div style={{ 
-                      padding: '8px 15px', 
-                      backgroundColor: '#f8f9fa', 
-                      fontWeight: 'bold',
-                      fontSize: '0.9em',
-                      color: '#666',
-                      borderBottom: '1px solid #eee'
-                    }}>
-                      Pays
-                    </div>
-                    {searchResults.pays.map((pays, index) => (
-                      <div
-                        key={`pays-${index}`}
-                        onClick={() => handlePlaceSelect(pays, 'pays')}
-                        style={{
-                          padding: '10px 15px',
-                          cursor: 'pointer',
-                          borderBottom: '1px solid #eee',
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-                      >
-                        <div style={{ fontWeight: 'bold' }}>{pays.nom}</div>
-                        <div style={{ fontSize: '0.9em', color: '#666' }}>
-                          Pays
+                    <div className="category">Pays</div>
+                    {searchResults.pays.map((pays, i) => {
+                      const idx = searchResults.lieux.length + i;
+                      return (
+                        <div
+                          id={`result-${idx}`}
+                          key={`pays-${i}`}
+                          className={`result ${activeIndex === idx ? 'active' : ''}`}
+                          onClick={() => handlePlaceSelect(pays, 'pays')}
+                        >
+                          <strong>{pays.nom}</strong>
+                          <span>Pays</span>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </>
                 )}
               </>
