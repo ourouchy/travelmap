@@ -633,3 +633,35 @@ def check_media_permissions(user, media):
 - **Connexion Facebook** (préparé)
 - **Connexion GitHub** (préparé)
 - **Synchronisation** des profils
+
+### 🎯 **Système de Permissions des Activités (NOUVEAU)**
+
+#### **Nouvelles Permissions Implémentées**
+- **Consultation des activités** : Accès public (`AllowAny`) pour tous les utilisateurs
+- **Création d'activités** : Authentification requise + validation métier (lieu visité)
+- **Modification d'activités** : Seul le créateur peut modifier ses activités
+- **Suppression d'activités** : Seul le créateur peut supprimer ses activités
+- **Notation d'activités** : Authentification + validation métier (lieu visité)
+
+#### **Validation Métier des Activités**
+- **Vérification des lieux visités** : L'utilisateur doit avoir un voyage dans le lieu
+- **Contrôle des permissions** : Validation côté serializer et ViewSet
+- **Isolation des données** : Chaque utilisateur ne voit que ses propres activités
+- **Sécurité des endpoints** : Permissions différentes selon l'action (lecture/écriture)
+
+#### **Sécurité Renforcée**
+- **Filtrage automatique** : Activités filtrées par lieu via paramètres de requête
+- **Validation des données** : Titre et description obligatoires
+- **Protection contre l'injection** : Sanitisation des champs de saisie
+- **Gestion des erreurs** : Messages d'erreur clairs sans exposition de données sensibles
+
+#### **Architecture des Permissions**
+```python
+# Permissions différentes selon l'action dans ActiviteViewSet
+def get_permissions(self):
+    if self.action in ['list', 'retrieve', 'notes']:
+        permission_classes = [AllowAny]  # Consultation publique
+    else:
+        permission_classes = [IsAuthenticated]  # Création/modification
+    return [permission() for permission in permission_classes]
+```

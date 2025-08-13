@@ -8,6 +8,8 @@ router.register(r'pays', views.PaysViewSet, basename='pays')
 router.register(r'lieux', views.LieuViewSet, basename='lieu')
 router.register(r'voyages', views.VoyageViewSet, basename='voyage')
 router.register(r'favoris', views.FavoriViewSet, basename='favori')
+router.register(r'activites', views.ActiviteViewSet, basename='activite')
+router.register(r'notes-activites', views.NoteActiviteViewSet, basename='noteactivite')
 
 urlpatterns = [
     # Endpoints d'authentification

@@ -7,6 +7,9 @@ const Navbar = ({ isAuthenticated, setCurrentPage, handleLogout, toggleTheme, is
         <div className="nav-group">
           <button onClick={() => setCurrentPage('Index')}>Accueil</button>
           <button onClick={() => setCurrentPage('Trip')}>Voyage</button>
+          {isAuthenticated && (
+            <button onClick={() => setCurrentPage('Activites')}>Activités</button>
+          )}
         </div>
         
         <div className="nav-group">

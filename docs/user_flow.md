@@ -415,3 +415,30 @@ graph TD
 - **Alertes** pour les erreurs et succès
 - **Notifications** pour les mises à jour
 - **Feedback visuel** pour toutes les interactions
+
+### 🎯 **Flux des Activités - Nouveau Parcours Utilisateur (NOUVEAU)**
+
+#### **Flux de Création d'Activité**
+1. **Accès à la page Activités** : Clic sur "Activités" dans la navbar
+2. **Sélection de destination** : Clic sur une destination visitée
+3. **Formulaire de création** : Modal avec destination pré-remplie (read-only)
+4. **Saisie des informations** : Titre et description de l'activité
+5. **Validation et création** : Vérification des permissions et sauvegarde
+
+#### **Flux de Gestion des Activités**
+1. **Consultation de ses activités** : Section "Mes Activités Créées"
+2. **Modification d'activité** : Clic sur "Modifier" → Modal de modification
+3. **Suppression d'activité** : Clic sur "Supprimer" → Confirmation
+4. **Synchronisation** : Rechargement automatique de la liste
+
+#### **Flux d'Affichage des Activités dans les Lieux**
+1. **Navigation vers un lieu** : Via recherche depuis l'accueil
+2. **Consultation des activités** : Section "Activités disponibles" sous les voyages
+3. **Informations affichées** : Titre, description, créateur, notes moyennes
+4. **Préparation à la notation** : Bouton "Noter cette activité" (prêt pour implémentation)
+
+#### **Logique Métier Implémentée**
+- **Permissions automatiques** : Seuls les lieux visités permettent la création d'activités
+- **Validation en temps réel** : Vérification des droits avant chaque action
+- **Interface cohérente** : Même style et comportement que les voyages existants
+- **Gestion d'erreurs** : Messages clairs et fallbacks appropriés

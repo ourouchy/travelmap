@@ -384,4 +384,31 @@ const checkLieuExistence = async (coordonnees, adresse) => {
 - **Recherche optimisée** avec indexation
 - **Chargement progressif** des résultats
 - **Cache intelligent** des données fréquentes
-- **Optimisation** des requêtes API 
+- **Optimisation** des requêtes API
+
+### 🎯 **Intégration des Activités dans les Lieux (NOUVEAU)**
+
+#### **Affichage des Activités dans Lieu.jsx**
+- **Section "Activités disponibles"** : Ajoutée sous la section des voyages
+- **Récupération automatique** : Appel à `/api/activites/?lieu_id={lieu_id}`
+- **Filtrage côté serveur** : Seules les activités du lieu spécifique s'affichent
+- **Interface cohérente** : Même style que les voyages existants
+
+#### **Données des Activités Affichées**
+- **Titre et description** : Informations complètes de l'activité
+- **Créateur** : Nom d'utilisateur qui a créé l'activité
+- **Statistiques** : Note moyenne et nombre d'avis
+- **Date de création** : Quand l'activité a été proposée
+- **Bouton de notation** : Prêt pour l'implémentation future
+
+#### **Intégration Technique**
+- **Nouveau state** : `activites` et `isLoadingActivites` dans Lieu.jsx
+- **useEffect dédié** : Chargement des activités au montage du composant
+- **Gestion des états** : Loading, erreurs, et liste vide
+- **Responsive design** : Grille adaptative pour tous les écrans
+
+#### **Logique Métier Implémentée**
+- **Accès public** : Les activités sont visibles par tous les utilisateurs
+- **Filtrage automatique** : Seules les activités du lieu consulté s'affichent
+- **Préparation à la notation** : Interface prête pour l'ajout de la fonctionnalité
+- **Cohérence des données** : Synchronisation avec le système d'activités global 

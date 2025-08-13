@@ -1,10 +1,11 @@
 from django.http import JsonResponse
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
@@ -13,9 +14,10 @@ from .serializers import (
     PaysSerializer, LieuSerializer, LieuListSerializer,
     VoyageSerializer, VoyageCreateSerializer,
     FavoriSerializer, FavoriCreateSerializer, UserStatsSerializer,
-    VoyageCreateWithMediaSerializer
+    VoyageCreateWithMediaSerializer, ActiviteSerializer, ActiviteListSerializer,
+    NoteActiviteSerializer, ActiviteCreateWithMediaSerializer
 )
-from .models import Pays, Lieu, Voyage, Favori, MediaVoyage
+from .models import Pays, Lieu, Voyage, Favori, MediaVoyage, Activite, NoteActivite, MediaActivite
 
 def ping(request):
     return JsonResponse({"message": "pong"})
@@ -198,6 +200,114 @@ class LieuDetailView(APIView):
         lieu_data['total_voyages'] = all_voyages.count()
         
         return Response(lieu_data)
+
+class ActiviteViewSet(viewsets.ModelViewSet):
+    """ViewSet pour les activités"""
+    serializer_class = ActiviteSerializer
+    authentication_classes = [JWTAuthentication]  # Forcer l'authentification JWT sur toutes les actions
+    
+    def get_permissions(self):
+        """Permissions différentes selon l'action"""
+        if self.action in ['list', 'retrieve', 'notes']:
+            # Consultation publique des activités
+            permission_classes = [AllowAny]
+        else:
+            # Création, modification, suppression nécessitent une authentification
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        """Retourne les activités avec filtrage optionnel par lieu"""
+        queryset = Activite.objects.all()
+        
+        # Filtrer par lieu si le paramètre lieu_id est fourni
+        lieu_id = self.request.query_params.get('lieu_id')
+        if lieu_id:
+            queryset = queryset.filter(lieu_id=lieu_id)
+        
+        return queryset
+    
+    def get_serializer_class(self):
+        """Utilise un serializer différent selon l'action"""
+        if self.action in ['list', 'retrieve']:
+            return ActiviteListSerializer
+        elif self.action == 'create':
+            return ActiviteCreateWithMediaSerializer
+        return ActiviteSerializer
+    
+    def get_serializer_context(self):
+        """S'assure que le contexte utilisateur est toujours passé"""
+        context = super().get_serializer_context()
+        # Toujours inclure la requête pour que les serializers puissent accéder à l'utilisateur
+        context['request'] = self.request
+        
+        # Pour les actions publiques, s'assurer que l'utilisateur est bien dans le contexte
+        if self.action in ['list', 'retrieve']:
+            # Même si l'action est publique, on veut pouvoir vérifier l'utilisateur si il est connecté
+            if self.request.user.is_authenticated:
+                print(f"🔍 DEBUG ViewSet: Utilisateur authentifié: {self.request.user.username}")
+                
+                # Debug: vérifier les voyages de l'utilisateur
+                lieu_id = self.request.query_params.get('lieu_id')
+                if lieu_id:
+                    voyages_count = self.request.user.voyages.filter(lieu_id=lieu_id).count()
+                    print(f"🔍 DEBUG ViewSet: Utilisateur a {voyages_count} voyages dans ce lieu")
+                    
+                    # Debug: vérifier le lieu
+                    try:
+                        lieu = Lieu.objects.get(id=lieu_id)
+                        print(f"🔍 DEBUG ViewSet: Lieu demandé: {lieu.nom_ville}, {lieu.pays.nom}")
+                    except Lieu.DoesNotExist:
+                        print(f"❌ DEBUG ViewSet: Lieu non trouvé")
+            else:
+                print(f"🔍 DEBUG ViewSet: Utilisateur anonyme")
+        
+        return context
+    
+    def perform_create(self, serializer):
+        """Crée une activité avec validation des permissions"""
+        # La validation est déjà faite dans le serializer
+        return serializer.save()
+    
+    @action(detail=True, methods=['get'])
+    def notes(self, request, pk=None):
+        """Récupère toutes les notes d'une activité"""
+        activite = self.get_object()
+        notes = activite.notes.all()
+        serializer = NoteActiviteSerializer(notes, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def noter(self, request, pk=None):
+        """Permet à un utilisateur de noter une activité"""
+        activite = self.get_object()
+        serializer = NoteActiviteSerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class NoteActiviteViewSet(viewsets.ModelViewSet):
+    """ViewSet pour les notes d'activités"""
+    serializer_class = NoteActiviteSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Retourne seulement les notes de l'utilisateur connecté"""
+        return NoteActivite.objects.filter(utilisateur=self.request.user)
+    
+    def perform_create(self, serializer):
+        """Crée une note avec validation des permissions"""
+        return serializer.save()
+    
+    def perform_update(self, serializer):
+        """Met à jour une note (seulement le commentaire)"""
+        return serializer.save()
+    
+    def perform_destroy(self, instance):
+        """Supprime une note"""
+        instance.delete()
 
 class SearchView(APIView):
     """Vue pour la recherche globale"""

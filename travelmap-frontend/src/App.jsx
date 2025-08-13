@@ -7,6 +7,7 @@ import Trip from './Trip';
 import Profile from './Profile';
 import Navbar from './Navbar';
 import Lieu from './Lieu';
+import Activites from './Activites';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('Index');
@@ -90,6 +91,8 @@ const App = () => {
         return <Profile onLogout={handleLogout} user={user} />;
       case 'Lieu': 
         return <Lieu lieuId={lieuId} lieuData={lieuData} onNavigateBack={navigateBackToIndex} />;
+      case 'Activites': 
+        return <Activites />;
       default: 
         return <Index onNavigateToLieu={navigateToLieu} />;
     }

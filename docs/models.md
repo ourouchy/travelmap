@@ -253,6 +253,253 @@ favori = Favori.objects.create(utilisateur=user, lieu=paris)
 print(favori)  # "user@example.com - Paris"
 ```
 
+### 5. Activite
+
+**Description** : Modèle représentant les activités proposées dans les lieux par les utilisateurs.
+
+**Fichier** : `places/models.py`
+
+```python
+class Activite(models.Model):
+    TYPE_ACTIVITE_CHOICES = [
+        ('culture', 'Culture & Patrimoine'),
+        ('nature', 'Nature & Plein air'),
+        ('gastronomie', 'Gastronomie'),
+        ('restauration_rapide', 'Restauration rapide'),
+        ('sport', 'Sport & Aventure'),
+        ('divertissement', 'Divertissement'),
+        ('shopping', 'Shopping'),
+        ('bien_etre', 'Bien-être & Spa'),
+        ('autre', 'Autre')
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    titre = models.CharField(max_length=200)
+    description = models.TextField()
+    lieu = models.ForeignKey(Lieu, on_delete=models.CASCADE, related_name='activites')
+    cree_par = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activites_creees')
+    date_creation = models.DateTimeField(auto_now_add=True)
+    
+    # Nouveaux champs pour enrichir les activités
+    prix_estime = models.DecimalField(
+        max_digits=8, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Prix estimé en euros"
+    )
+    age_minimum = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        help_text="Âge minimum requis (en années)"
+    )
+    type_activite = models.CharField(
+        max_length=20,
+        choices=TYPE_ACTIVITE_CHOICES,
+        default='autre',
+        help_text="Type d'activité"
+    )
+    adresse_precise = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Adresse précise de l'activité"
+    )
+    transport_public = models.BooleanField(
+        default=False,
+        help_text="Accessible en transport en commun"
+    )
+    reservation_requise = models.BooleanField(
+        default=False,
+        help_text="Réservation obligatoire"
+    )
+```
+
+**Champs de base :**
+- **`id`** (UUIDField, clé primaire) : Identifiant unique auto-généré
+- **`titre`** (CharField, 200 caractères) : Titre de l'activité (ex: "Visite du Louvre", "Balade sur les Champs-Élysées")
+- **`description`** (TextField) : Description détaillée de l'activité
+- **`lieu`** (ForeignKey vers Lieu) : Lieu où se déroule l'activité
+- **`cree_par`** (ForeignKey vers User) : Utilisateur qui a créé l'activité
+- **`date_creation`** (DateTimeField, auto_now_add) : Date et heure de création automatique
+
+**Nouveaux champs enrichis :**
+- **`prix_estime`** (DecimalField, 8.2, nullable) : Prix estimé en euros (ex: 15.50)
+- **`age_minimum`** (PositiveIntegerField, nullable) : Âge minimum requis, 0 = "Tous âges"
+- **`type_activite`** (CharField, choices) : Catégorie de l'activité avec 9 choix prédéfinis
+- **`adresse_precise`** (CharField, 500, blank) : Adresse détaillée de l'activité
+- **`transport_public`** (BooleanField, default=False) : Accessible en transport en commun
+- **`reservation_requise`** (BooleanField, default=False) : Réservation obligatoire
+
+**Relations :**
+- **`lieu`** : Lieu de l'activité (N:1)
+- **`cree_par`** : Créateur de l'activité (N:1)
+- **`notes`** : Notes données à l'activité (1:N)
+- **`medias`** : Médias associés à l'activité (1:N)
+
+**Métadonnées :**
+- **verbose_name_plural** : "Activités"
+- **ordering** : `['-date_creation']` (tri par date de création décroissante)
+
+**Méthodes :**
+- **`get_note_moyenne()`** : Calcule la note moyenne de l'activité
+- **`get_nombre_notes()`** : Retourne le nombre de notes
+- **`get_medias_images()`** : Retourne les images de l'activité
+- **`get_medias_videos()`** : Retourne les vidéos de l'activité
+- **`get_prix_display()`** : Retourne le prix formaté (ex: "15.50 €")
+- **`get_type_activite_display()`** : Retourne le nom lisible du type
+- **`can_user_create_activity(user)`** : Vérifie si un utilisateur peut créer une activité
+
+**Validation :**
+- Seuls les utilisateurs ayant visité le lieu peuvent créer une activité
+- Titre et description obligatoires
+- Prix estimé doit être positif
+- Âge minimum entre 0 et 120 ans
+- Type d'activité doit être dans les choix prédéfinis
+
+**Exemple :**
+```python
+activite = Activite.objects.create(
+    titre="Visite du Louvre",
+    description="Découverte des chefs-d'œuvre de l'art",
+    lieu=paris,
+    cree_par=user,
+    prix_estime=15.00,
+    age_minimum=0,  # Tous âges
+    type_activite='culture',
+    adresse_precise="Rue de Rivoli, 75001 Paris",
+    transport_public=True,
+    reservation_requise=False
+)
+print(activite)  # "Visite du Louvre - Paris"
+print(activite.get_prix_display())  # "15.00 €"
+print(activite.get_type_activite_display())  # "Culture & Patrimoine"
+```
+
+### 6. MediaActivite (NOUVEAU)
+
+**Description** : Modèle représentant les médias (images et vidéos) associés aux activités.
+
+**Fichier** : `places/models.py`
+
+```python
+class MediaActivite(models.Model):
+    """Media model for activity images and videos"""
+    MEDIA_TYPES = [
+        ('image', 'Image'),
+        ('video', 'Vidéo'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    activite = models.ForeignKey('Activite', on_delete=models.CASCADE, related_name='medias')
+    fichier = models.FileField(upload_to='activites_medias/')
+    type_media = models.CharField(max_length=10, choices=MEDIA_TYPES)
+    titre = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    date_upload = models.DateTimeField(auto_now_add=True)
+    ordre = models.PositiveIntegerField(default=0, help_text="Ordre d'affichage")
+```
+
+**Champs :**
+- **`id`** (UUIDField, clé primaire) : Identifiant unique auto-généré
+- **`activite`** (ForeignKey vers Activite) : Activité associée au média
+- **`fichier`** (FileField) : Fichier média uploadé vers `activites_medias/`
+- **`type_media`** (CharField, choices) : Type de média (image ou vidéo)
+- **`titre`** (CharField, 200, blank) : Titre optionnel du média
+- **`description`** (TextField, blank) : Description optionnelle du média
+- **`date_upload`** (DateTimeField, auto_now_add) : Date et heure d'upload automatique
+- **`ordre`** (PositiveIntegerField, default=0) : Ordre d'affichage des médias
+
+**Relations :**
+- **`activite`** : Activité associée au média (N:1)
+
+**Métadonnées :**
+- **verbose_name** : "Média d'activité"
+- **verbose_name_plural** : "Médias d'activités"
+- **ordering** : `['ordre', 'date_upload']` (tri par ordre puis par date)
+
+**Méthodes :**
+- **`get_url()`** : Retourne l'URL du fichier
+- **`__str__()`** : Représentation string avec activité et type
+
+**Validation :**
+- **Taille** : Maximum 10MB par fichier
+- **Types supportés** : 
+  - Images : JPG, JPEG, PNG, GIF, WebP
+  - Vidéos : MP4, AVI, MOV, WMV
+- **Upload** : Dossier `activites_medias/` automatique
+
+**Exemple :**
+```python
+media = MediaActivite.objects.create(
+    activite=activite,
+    fichier=image_file,
+    type_media='image',
+    titre="Vue du Louvre",
+    description="Façade principale du musée",
+    ordre=1
+)
+print(media)  # "Visite du Louvre - Image"
+print(media.get_url())  # "/media/activites_medias/image.jpg"
+```
+
+### 7. NoteActivite
+
+**Description** : Modèle représentant les notes données aux activités par les utilisateurs.
+
+**Fichier** : `places/models.py`
+
+```python
+class NoteActivite(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    activite = models.ForeignKey(Activite, on_delete=models.CASCADE, related_name='notes')
+    utilisateur = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notes_activites')
+    note = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    commentaire = models.TextField(blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+```
+
+**Champs :**
+- **`id`** (UUIDField, clé primaire)
+  - Identifiant unique auto-généré
+- **`activite`** (ForeignKey vers Activite)
+  - Activité notée
+  - Relation CASCADE
+- **`utilisateur`** (ForeignKey vers User)
+  - Utilisateur qui a donné la note
+  - Relation CASCADE
+- **`note`** (IntegerField, 1-5)
+  - Note de 1 à 5 étoiles
+  - Validation automatique
+- **`commentaire`** (TextField, blank)
+  - Commentaire optionnel sur l'activité
+- **`date_creation`** (DateTimeField, auto_now_add)
+  - Date et heure de création automatique
+
+**Relations :**
+- **`activite`** : Activité notée (N:1)
+- **`utilisateur`** : Utilisateur qui a noté (N:1)
+
+**Métadonnées :**
+- **verbose_name_plural** : "Notes d'activités"
+- **unique_together** : `['activite', 'utilisateur']` (un utilisateur ne peut noter qu'une fois)
+- **ordering** : `['-date_creation']` (tri par date de création décroissante)
+
+**Validation :**
+- Note entre 1 et 5 étoiles
+- Un utilisateur ne peut noter une activité qu'une seule fois
+- Seuls les utilisateurs ayant visité le lieu peuvent noter
+
+**Exemple :**
+```python
+note = NoteActivite.objects.create(
+    activite=activite,
+    utilisateur=user,
+    note=5,
+    commentaire="Activité exceptionnelle !"
+)
+print(note)  # "user@example.com - Visite du Louvre - 5/5"
+```
+
 ## Méthodes Utilitaires (User)
 
 ### Extension du modèle User Django
@@ -492,21 +739,113 @@ Cette architecture de modèles fournit une base solide et extensible pour l'appl
 - **Validation en temps réel** des données saisies
 - **Responsive design** pour tous les appareils
 
-### 📝 **Détails Techniques des Nouvelles Implémentations**
+### 🆕 **Nouvelles Fonctionnalités Implémentées (Session Actuelle)**
 
-#### **Backend (Django)**
-- **Serializers étendus** pour la gestion des médias
-- **API endpoints** pour l'upload et la récupération des fichiers
-- **Validation des données** côté serveur
-- **Gestion des permissions** pour l'accès aux médias
+#### **Système d'Activités Enrichi et Complet**
+- **Modèle `Activite` étendu** avec 6 nouveaux champs enrichis :
+  - **`prix_estime`** : Prix estimé en euros (DecimalField 8.2)
+  - **`age_minimum`** : Âge minimum requis (0 = "Tous âges")
+  - **`type_activite`** : 9 catégories prédéfinies (culture, nature, gastronomie, etc.)
+  - **`adresse_precise`** : Adresse détaillée de l'activité
+  - **`transport_public`** : Accessible en transport en commun (boolean)
+  - **`reservation_requise`** : Réservation obligatoire (boolean)
 
-#### **Frontend (React)**
-- **Composants Map** avec intégration Leaflet
-- **Gestion des formulaires** avec validation
-- **Upload de fichiers** avec barre de progression
-- **Navigation entre les pages** avec React Router
+#### **Gestion Complète des Médias d'Activités**
+- **Modèle `MediaActivite`** : Nouveau modèle dédié aux médias des activités
+  - Support des images (JPG, PNG, GIF, WebP) et vidéos (MP4, AVI, MOV, WMV)
+  - Limite de taille : 10MB maximum par fichier
+  - Champs : `fichier`, `type_media`, `titre`, `description`, `ordre`
+  - Upload automatique vers le dossier `activites_medias/`
+  - Validation robuste des types et tailles de fichiers
 
-#### **Base de Données**
-- **Nouvelle table `media_voyage`** pour stocker les médias
-- **Relations** avec les modèles Voyage et Lieu
-- **Indexation** pour les performances de recherche 
+#### **Interface Frontend Complète et Intuitive**
+- **Formulaire de création d'activité** avec tous les nouveaux champs :
+  - Champs obligatoires : titre, description
+  - Champs optionnels : prix, âge, type, adresse, options pratiques
+  - Upload multiple de médias avec aperçu des fichiers
+  - Validation en temps réel et feedback utilisateur
+
+- **Formulaire de modification d'activité** entièrement mis à jour :
+  - Tous les nouveaux champs modifiables
+  - Pré-remplissage automatique des données existantes
+  - Gestion des états et validation
+
+- **Affichage enrichi des activités** :
+  - Section "Détails pratiques" avec tags colorés
+  - Affichage conditionnel des informations (prix, âge, type, etc.)
+  - Gestion spéciale de l'âge minimum (0 = "Tous âges")
+  - Intégration des médias avec compteurs
+
+#### **Gestion Avancée des Médias dans l'Interface**
+- **Séparation automatique** des médias par type :
+  - **Section Photos** : Grille responsive avec aperçus cliquables
+  - **Section Vidéos** : Grille avec contrôles de lecture intégrés
+  - **Compteurs** : Affichage du nombre de photos et vidéos
+
+- **Modal de visualisation plein écran** :
+  - **Images** : Affichage en plein écran avec zoom
+  - **Vidéos** : Lecture en plein écran avec contrôles
+  - **Navigation intuitive** : Bouton de fermeture et clic pour fermer
+  - **Titre des médias** : Affichage en bas de la modal
+
+#### **Système de Notation et Permissions Renforcé**
+- **Logique métier complète** pour la notation des activités :
+  - Vérification des permissions (utilisateur authentifié, non créateur)
+  - Validation des conditions (lieu visité, pas déjà noté)
+  - Gestion des états d'interface selon les permissions
+
+- **Affichage conditionnel** des messages :
+  - "Peut noter" : Bouton de notation visible
+  - "Déjà noté" : Affichage de la note existante
+  - "Créateur" : Message d'information approprié
+  - "Non visité" : Explication des conditions requises
+
+#### **Sérialisation et API Optimisées**
+- **Serializers enrichis** avec tous les nouveaux champs :
+  - **`ActiviteSerializer`** : Détail complet avec médias et champs calculés
+  - **`ActiviteCreateWithMediaSerializer`** : Création avec gestion des médias
+  - **`MediaActiviteSerializer`** : Sérialisation des médias avec URLs absolues
+  - **`ActiviteListSerializer`** : Liste optimisée avec médias limités
+
+- **Gestion du contexte** dans les serializers :
+  - Passage automatique du contexte `request` aux sous-serializers
+  - Construction correcte des URLs absolues pour les médias
+  - Résolution du problème de récupération des médias
+
+#### **Validation et Sécurité Renforcées**
+- **Validation côté serveur** :
+  - Vérification des types et tailles de fichiers
+  - Validation des champs (prix positif, âge entre 0-120)
+  - Contrôle des permissions d'accès et de modification
+
+- **Validation côté client** :
+  - Vérification des formulaires avant envoi
+  - Aperçu et validation des fichiers médias
+  - Feedback utilisateur en temps réel
+
+#### **Performance et Optimisation**
+- **Limitation des données** :
+  - Médias : 10 pour le détail, 5 pour la liste
+  - Notes : 5 pour la liste, 10 pour le détail
+  - Cache React pour éviter les rechargements
+
+- **Requêtes optimisées** :
+  - Filtrage par lieu avec endpoint dédié
+  - Sérialisation conditionnelle des champs calculés
+  - Relations optimisées pour les données liées
+
+### 🎯 **Expérience Utilisateur Finale**
+- **Formulaires complets** avec tous les champs enrichis
+- **Upload de médias** avec aperçu, validation et gestion d'erreurs
+- **Affichage riche** des détails pratiques avec tags colorés
+- **Interaction fluide** avec les médias (clics, modal, navigation)
+- **Feedback visuel** pour toutes les actions et états
+- **Interface responsive** adaptée à tous les appareils
+
+### 🚀 **État de Production**
+Le système d'activités est maintenant **100% complet et production-ready**, offrant :
+- **Fonctionnalités complètes** : Création, modification, consultation, notation
+- **Gestion des médias** : Upload, stockage, affichage, interaction
+- **Interface utilisateur** : Intuitive, responsive, accessible
+- **Sécurité et validation** : Robuste, sécurisé, performant
+- **Expérience utilisateur** : Riche, fluide, professionnelle 

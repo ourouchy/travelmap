@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Map from './components/Map';
 import VoyageDetail from './VoyageDetail';
+import ActiviteDetail from './ActiviteDetail';
 
 const Lieu = ({ lieuId, lieuData, onNavigateBack }) => {
   const [lieuDetails, setLieuDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedVoyageId, setSelectedVoyageId] = useState(null);
+  const [selectedActiviteId, setSelectedActiviteId] = useState(null);
+  const [activites, setActivites] = useState([]);
+  const [isLoadingActivites, setIsLoadingActivites] = useState(false);
 
   // Charger les détails du lieu avec ses voyages
   useEffect(() => {
@@ -35,6 +39,44 @@ const Lieu = ({ lieuId, lieuData, onNavigateBack }) => {
     }
   }, [lieuId]);
 
+  // Charger les activités du lieu
+  useEffect(() => {
+    const fetchActivites = async () => {
+      if (!lieuId) return;
+      
+      try {
+        setIsLoadingActivites(true);
+        
+        // Récupérer le token JWT pour l'authentification
+        const token = localStorage.getItem('authToken');
+        const headers = {};
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(`http://localhost:8000/api/activites/?lieu_id=${lieuId}`, {
+          headers: headers
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setActivites(data);
+        } else {
+          console.error('Erreur lors du chargement des activités');
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+      } finally {
+        setIsLoadingActivites(false);
+      }
+    };
+
+    if (lieuId) {
+      fetchActivites();
+    }
+  }, [lieuId]);
+
   const handleVoyageClick = (voyageId) => {
     setSelectedVoyageId(voyageId);
   };
@@ -43,11 +85,28 @@ const Lieu = ({ lieuId, lieuData, onNavigateBack }) => {
     setSelectedVoyageId(null);
   };
 
+  const handleActiviteClick = (activiteId) => {
+    setSelectedActiviteId(activiteId);
+  };
+
+  const handleBackFromActivite = () => {
+    setSelectedActiviteId(null);
+  };
+
   if (selectedVoyageId) {
     return (
       <VoyageDetail 
         voyageId={selectedVoyageId} 
         onNavigateBack={handleBackFromVoyage}
+      />
+    );
+  }
+
+  if (selectedActiviteId) {
+    return (
+      <ActiviteDetail 
+        activiteId={selectedActiviteId} 
+        onNavigateBack={handleBackFromActivite}
       />
     );
   }
@@ -326,6 +385,322 @@ const Lieu = ({ lieuId, lieuData, onNavigateBack }) => {
                   <div style={{ textAlign: 'center' }}>
                     <button
                       onClick={() => handleVoyageClick(voyage.id)}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.95em',
+                        fontWeight: '500',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#007bff'}
+                    >
+                      Voir plus
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Section des activités */}
+        <div style={{ marginTop: '40px' }}>
+          <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>
+            🎯 Activités disponibles ({activites.length})
+          </h2>
+          
+          {isLoadingActivites ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+              <div>Chargement des activités...</div>
+            </div>
+          ) : activites.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '40px', 
+              color: '#666',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px'
+            }}>
+              <div>Aucune activité disponible pour ce lieu pour le moment.</div>
+              <div style={{ marginTop: '10px', fontSize: '0.9em' }}>
+                Soyez le premier à proposer une activité !
+              </div>
+            </div>
+          ) : (
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+              gap: '20px' 
+            }}>
+              {activites.map((activite) => (
+                <div
+                  key={activite.id}
+                  style={{
+                    backgroundColor: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    padding: '20px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    transition: 'transform 0.2s, box-shadow 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                  }}
+                >
+                  {/* En-tête de la card avec titre et note moyenne */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'flex-start',
+                    marginBottom: '15px'
+                  }}>
+                    <h3 style={{ 
+                      margin: '0', 
+                      color: '#333',
+                      fontSize: '1.2em',
+                      flex: 1,
+                      marginRight: '15px'
+                    }}>
+                      🎯 {activite.titre}
+                    </h3>
+                    {activite.note_moyenne && (
+                      <div style={{ 
+                        backgroundColor: '#ffd700', 
+                        color: '#333',
+                        padding: '6px 10px',
+                        borderRadius: '20px',
+                        fontSize: '0.9em',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        ⭐ {activite.note_moyenne.toFixed(1)}/5
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div style={{ 
+                    marginBottom: '15px',
+                    padding: '12px',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '6px',
+                    fontSize: '0.95em',
+                    color: '#495057',
+                    lineHeight: '1.4',
+                    minHeight: '60px'
+                  }}>
+                    {activite.description}
+                  </div>
+
+                  {/* Détails pratiques de l'activité */}
+                  <div style={{ 
+                    marginBottom: '15px',
+                    padding: '12px',
+                    backgroundColor: '#e8f5e8',
+                    borderRadius: '6px',
+                    fontSize: '0.9em'
+                  }}>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: '8px'
+                    }}>
+                      {/* Type d'activité */}
+                      {activite.type_activite && activite.type_activite !== 'autre' && (
+                        <div style={{ 
+                          backgroundColor: '#d1ecf1',
+                          color: '#0c5460',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          textAlign: 'center',
+                          fontSize: '0.8em',
+                          fontWeight: '500'
+                        }}>
+                          🏷️ {activite.type_activite_display}
+                        </div>
+                      )}
+                      
+                      {/* Prix */}
+                      {activite.prix_estime && (
+                        <div style={{ 
+                          backgroundColor: '#d4edda',
+                          color: '#155724',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          textAlign: 'center',
+                          fontSize: '0.8em',
+                          fontWeight: '500'
+                        }}>
+                          💰 {activite.prix_display}
+                        </div>
+                      )}
+                      
+                      {/* Âge minimum */}
+                      {activite.age_minimum !== null && activite.age_minimum !== undefined && (
+                        <div style={{ 
+                          backgroundColor: '#fff3cd',
+                          color: '#856404',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          textAlign: 'center',
+                          fontSize: '0.8em',
+                          fontWeight: '500'
+                        }}>
+                          👶 {activite.age_minimum === 0 ? 'Tous âges' : `${activite.age_minimum}+ ans`}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Options pratiques */}
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '10px',
+                      marginTop: '8px',
+                      flexWrap: 'wrap'
+                    }}>
+                      {activite.transport_public && (
+                        <span style={{ 
+                          backgroundColor: '#cce5ff',
+                          color: '#004085',
+                          padding: '2px 6px',
+                          borderRadius: '8px',
+                          fontSize: '0.75em'
+                        }}>
+                          🚌 Transport public
+                        </span>
+                      )}
+                      {activite.reservation_requise && (
+                        <span style={{ 
+                          backgroundColor: '#f8d7da',
+                          color: '#721c24',
+                          padding: '2px 6px',
+                          borderRadius: '8px',
+                          fontSize: '0.75em'
+                        }}>
+                          📅 Réservation requise
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Adresse précise */}
+                    {activite.adresse_precise && (
+                      <div style={{ 
+                        marginTop: '8px',
+                        padding: '6px 8px',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '4px',
+                        fontSize: '0.8em',
+                        color: '#6c757d',
+                        borderLeft: '3px solid #007bff'
+                      }}>
+                        📍 {activite.adresse_precise}
+                      </div>
+                    )}
+                    
+                    {/* Médias */}
+                    {activite.medias && activite.medias.length > 0 && (
+                      <div style={{ 
+                        marginTop: '8px',
+                        padding: '8px',
+                        backgroundColor: '#e3f2fd',
+                        borderRadius: '6px',
+                        border: '1px solid #bbdefb'
+                      }}>
+                        <div style={{ 
+                          fontSize: '0.8em',
+                          fontWeight: '500',
+                          marginBottom: '6px',
+                          color: '#1976d2'
+                        }}>
+                          📸 Médias ({activite.medias.length})
+                        </div>
+                        <div style={{ 
+                          display: 'flex',
+                          gap: '8px',
+                          flexWrap: 'wrap'
+                        }}>
+                          {activite.medias.slice(0, 3).map((media, index) => (
+                            <div key={index} style={{ 
+                              fontSize: '0.75em',
+                              color: '#1976d2',
+                              padding: '2px 6px',
+                              backgroundColor: '#bbdefb',
+                              borderRadius: '4px'
+                            }}>
+                              {media.type_media === 'image' ? '🖼️' : '🎥'} {media.titre || `Média ${index + 1}`}
+                            </div>
+                          ))}
+                          {activite.medias.length > 3 && (
+                            <div style={{ 
+                              fontSize: '0.75em',
+                              color: '#1976d2',
+                              padding: '2px 6px',
+                              backgroundColor: '#bbdefb',
+                              borderRadius: '4px'
+                            }}>
+                              +{activite.medias.length - 3} autres
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Informations de l'activité */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '15px',
+                    fontSize: '0.9em',
+                    color: '#6c757d'
+                  }}>
+                    <span>👤 Par {activite.cree_par?.username || 'Utilisateur'}</span>
+                    <span>📅 {new Date(activite.date_creation).toLocaleDateString('fr-FR')}</span>
+                  </div>
+
+                  {/* Statistiques des notes */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px',
+                    fontSize: '0.9em',
+                    color: '#6c757d'
+                  }}>
+                    <span>
+                      📊 {activite.nombre_notes || 0} avis
+                    </span>
+                    {activite.note_moyenne && (
+                      <span style={{ 
+                        backgroundColor: '#e3f2fd',
+                        color: '#1976d2',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontWeight: '500'
+                      }}>
+                        Note moyenne: {activite.note_moyenne.toFixed(1)}/5
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Bouton pour noter l'activité */}
+                  <div style={{ textAlign: 'center' }}>
+                    <button
+                      onClick={() => handleActiviteClick(activite.id)}
                       style={{
                         padding: '10px 20px',
                         backgroundColor: '#007bff',

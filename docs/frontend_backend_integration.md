@@ -455,4 +455,30 @@ const Map = ({ lieu, style }) => {
 - **Nettoyage automatique** des ressources
 - **Gestion des événements** pour éviter les fuites mémoire
 - **Optimisation** des listes et tableaux
-- **Cache intelligent** des données fréquemment consultées 
+- **Cache intelligent** des données fréquemment consultées
+
+### 🎯 **Composant Activites - Nouvelle Intégration (NOUVEAU)**
+
+#### **Composant Activites.jsx**
+- **Page principale des activités** : Affichage des destinations visitées
+- **Gestion des activités** : Création, modification, suppression
+- **Interface utilisateur** : Modals, formulaires, gestion d'erreurs
+- **Intégration API** : Appels vers `/api/activites/` et `/api/notes-activites/`
+
+#### **Intégration dans l'Application**
+- **Navigation** : Bouton "Activités" ajouté dans la navbar
+- **Routage** : Nouvelle route `'Activites'` dans `App.jsx`
+- **État global** : Gestion des activités de l'utilisateur connecté
+- **Synchronisation** : Rechargement automatique après chaque action
+
+#### **Fonctionnalités Implémentées**
+- **Liste des destinations visitées** : Extraction depuis les voyages de l'utilisateur
+- **Création d'activités** : Formulaire modal avec destination pré-remplie (read-only)
+- **Gestion personnelle** : Modification et suppression de ses propres activités
+- **Validation métier** : Vérification que l'utilisateur a visité le lieu
+
+#### **Intégration avec les Lieux**
+- **Affichage dans Lieu.jsx** : Section "Activités disponibles" sous les voyages
+- **Filtrage automatique** : Seules les activités du lieu spécifique s'affichent
+- **Interface cohérente** : Même style que les voyages existants
+- **Données enrichies** : Titre, description, créateur, notes moyennes 

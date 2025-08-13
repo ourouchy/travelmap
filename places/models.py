@@ -76,6 +76,34 @@ class MediaVoyage(models.Model):
         """Retourne l'URL du fichier"""
         return self.fichier.url if self.fichier else None
 
+class MediaActivite(models.Model):
+    """Media model for activity images and videos"""
+    MEDIA_TYPES = [
+        ('image', 'Image'),
+        ('video', 'Vidéo'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    activite = models.ForeignKey('Activite', on_delete=models.CASCADE, related_name='medias')
+    fichier = models.FileField(upload_to='activites_medias/')
+    type_media = models.CharField(max_length=10, choices=MEDIA_TYPES)
+    titre = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    date_upload = models.DateTimeField(auto_now_add=True)
+    ordre = models.PositiveIntegerField(default=0, help_text="Ordre d'affichage")
+    
+    class Meta:
+        verbose_name = "Média d'activité"
+        verbose_name_plural = "Médias d'activités"
+        ordering = ['ordre', 'date_upload']
+    
+    def __str__(self):
+        return f"{self.activite} - {self.get_type_media_display()}"
+    
+    def get_url(self):
+        """Retourne l'URL du fichier"""
+        return self.fichier.url if self.fichier else None
+
 class Voyage(models.Model):
     """Trip model - Enregistrement d'une visite d'un lieu par un utilisateur"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -124,6 +152,120 @@ class Favori(models.Model):
     
     def __str__(self):
         return f"{self.utilisateur.username} - {self.lieu.nom_ville}"
+
+class NoteActivite(models.Model):
+    """Activity rating model - Notes données aux activités"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    activite = models.ForeignKey('Activite', on_delete=models.CASCADE, related_name='notes')
+    utilisateur = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notes_activites')
+    note = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Note de 1 à 5"
+    )
+    commentaire = models.TextField(blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name_plural = "Notes d'activités"
+        unique_together = ['activite', 'utilisateur']  # Un utilisateur ne peut noter qu'une fois
+        ordering = ['-date_creation']
+    
+    def __str__(self):
+        return f"{self.utilisateur.username} - {self.activite.titre} - {self.note}/5"
+
+class Activite(models.Model):
+    """Activity model - Activités proposées dans les lieux"""
+    TYPE_ACTIVITE_CHOICES = [
+        ('culture', 'Culture & Patrimoine'),
+        ('nature', 'Nature & Plein air'),
+        ('gastronomie', 'Gastronomie'),
+        ('restauration_rapide', 'Restauration rapide'),
+        ('sport', 'Sport & Aventure'),
+        ('divertissement', 'Divertissement'),
+        ('shopping', 'Shopping'),
+        ('bien_etre', 'Bien-être & Spa'),
+        ('autre', 'Autre')
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    titre = models.CharField(max_length=200)
+    description = models.TextField()
+    lieu = models.ForeignKey(Lieu, on_delete=models.CASCADE, related_name='activites')
+    cree_par = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activites_creees')
+    date_creation = models.DateTimeField(auto_now_add=True)
+    
+    # Nouveaux champs pour enrichir les activités
+    prix_estime = models.DecimalField(
+        max_digits=8, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Prix estimé en euros"
+    )
+    age_minimum = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        help_text="Âge minimum requis (en années)"
+    )
+    type_activite = models.CharField(
+        max_length=20,
+        choices=TYPE_ACTIVITE_CHOICES,
+        default='autre',
+        help_text="Type d'activité"
+    )
+    adresse_precise = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Adresse précise de l'activité"
+    )
+    transport_public = models.BooleanField(
+        default=False,
+        help_text="Accessible en transport en commun"
+    )
+    reservation_requise = models.BooleanField(
+        default=False,
+        help_text="Réservation obligatoire"
+    )
+    
+    class Meta:
+        verbose_name_plural = "Activités"
+        ordering = ['-date_creation']
+    
+    def __str__(self):
+        return f"{self.titre} - {self.lieu.nom_ville}"
+    
+    def get_note_moyenne(self):
+        """Calcule la note moyenne de l'activité"""
+        notes = self.notes.all()
+        if notes.exists():
+            return notes.aggregate(models.Avg('note'))['note__avg']
+        return None
+    
+    def get_nombre_notes(self):
+        """Retourne le nombre de notes pour cette activité"""
+        return self.notes.count()
+    
+    def can_user_create_activity(self, user):
+        """Vérifie si l'utilisateur peut créer une activité dans ce lieu"""
+        return user.voyages.filter(lieu=self.lieu).exists()
+    
+    def get_medias_images(self):
+        """Retourne les images de l'activité"""
+        return self.medias.filter(type_media='image').order_by('ordre')
+    
+    def get_medias_videos(self):
+        """Retourne les vidéos de l'activité"""
+        return self.medias.filter(type_media='video').order_by('ordre')
+    
+    def get_prix_display(self):
+        """Retourne le prix formaté avec le symbole euro"""
+        if self.prix_estime:
+            return f"{self.prix_estime}€"
+        return "Gratuit"
+    
+    def get_type_activite_display(self):
+        """Retourne le nom lisible du type d'activité"""
+        return dict(self.TYPE_ACTIVITE_CHOICES).get(self.type_activite, 'Autre')
 
 # Méthodes utilitaires pour User
 def get_lieux_visites(self):

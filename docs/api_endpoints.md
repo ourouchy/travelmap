@@ -285,6 +285,152 @@ http://localhost:8000/api/
 - **Permissions** : Authentifié (propriétaire)
 - **Headers** : `Authorization: Bearer <token>`
 
+## Activités
+
+### Liste des activités
+- **URL** : `GET /api/activites/`
+- **Permissions** : Aucune (endpoint public)
+- **Réponse** (200) :
+```json
+[
+    {
+        "id": "uuid",
+        "titre": "Visite du Louvre",
+        "description": "Découverte des chefs-d'œuvre de l'art",
+        "lieu": {
+            "id": "uuid",
+            "nom_ville": "Paris",
+            "pays": {
+                "code_iso": "FRA",
+                "nom": "France"
+            }
+        },
+        "cree_par": {
+            "id": 1,
+            "username": "user@example.com",
+            "first_name": "John",
+            "last_name": "Doe"
+        },
+        "date_creation": "2024-01-15T10:30:00Z",
+        "note_moyenne": 4.5,
+        "nombre_notes": 3
+    }
+]
+```
+
+### Détails d'une activité
+- **URL** : `GET /api/activites/{id}/`
+- **Permissions** : Aucune (endpoint public)
+- **Réponse** (200) :
+```json
+{
+    "id": "uuid",
+    "titre": "Visite du Louvre",
+    "description": "Découverte des chefs-d'œuvre de l'art",
+    "lieu": {...},
+    "cree_par": {...},
+    "date_creation": "2024-01-15T10:30:00Z",
+    "notes": [
+        {
+            "id": "uuid",
+            "utilisateur": {...},
+            "note": 5,
+            "commentaire": "Activité exceptionnelle !",
+            "date_creation": "2024-01-16T14:20:00Z"
+        }
+    ],
+    "note_moyenne": 4.5,
+    "nombre_notes": 3,
+    "can_rate": true
+}
+```
+
+### Création d'une activité
+- **URL** : `POST /api/activites/`
+- **Permissions** : Authentifié (doit avoir visité le lieu)
+- **Headers** : `Authorization: Bearer <token>`
+- **Body** :
+```json
+{
+    "titre": "Visite du Louvre",
+    "description": "Découverte des chefs-d'œuvre de l'art",
+    "lieu_id": "uuid"
+}
+```
+
+### Modification d'une activité
+- **URL** : `PUT /api/activites/{id}/`
+- **Permissions** : Authentifié (créateur uniquement)
+- **Headers** : `Authorization: Bearer <token>`
+
+### Suppression d'une activité
+- **URL** : `DELETE /api/activites/{id}/`
+- **Permissions** : Authentifié (créateur uniquement)
+- **Headers** : `Authorization: Bearer <token>`
+
+### Notes d'une activité
+- **URL** : `GET /api/activites/{id}/notes/`
+- **Permissions** : Aucune (endpoint public)
+- **Réponse** (200) : Liste des notes de l'activité
+
+### Noter une activité
+- **URL** : `POST /api/activites/{id}/noter/`
+- **Permissions** : Authentifié (doit avoir visité le lieu)
+- **Headers** : `Authorization: Bearer <token>`
+- **Body** :
+```json
+{
+    "note": 5,
+    "commentaire": "Activité exceptionnelle !"
+}
+```
+
+## Notes d'Activités
+
+### Liste des notes de l'utilisateur
+- **URL** : `GET /api/notes-activites/`
+- **Permissions** : Authentifié
+- **Headers** : `Authorization: Bearer <token>`
+- **Réponse** (200) :
+```json
+[
+    {
+        "id": "uuid",
+        "activite": {
+            "id": "uuid",
+            "titre": "Visite du Louvre"
+        },
+        "utilisateur": {...},
+        "note": 5,
+        "commentaire": "Activité exceptionnelle !",
+        "date_creation": "2024-01-16T14:20:00Z"
+    }
+]
+```
+
+### Création d'une note
+- **URL** : `POST /api/notes-activites/`
+- **Permissions** : Authentifié (doit avoir visité le lieu)
+- **Headers** : `Authorization: Bearer <token>`
+- **Body** :
+```json
+{
+    "activite": "uuid",
+    "note": 5,
+    "commentaire": "Activité exceptionnelle !"
+}
+```
+
+### Modification d'une note
+- **URL** : `PUT /api/notes-activites/{id}/`
+- **Permissions** : Authentifié (propriétaire)
+- **Headers** : `Authorization: Bearer <token>`
+
+### Suppression d'une note
+- **URL** : `DELETE /api/notes-activites/{id}/`
+- **Permissions** : Authentifié (propriétaire)
+- **Headers** : `Authorization: Bearer <token>`
+
 ## Profil Utilisateur
 
 ### Statistiques de l'utilisateur
@@ -464,4 +610,29 @@ curl "http://localhost:8000/api/profile/" \
 - **Compression automatique** des images
 - **Thumbnails** générés automatiquement
 - **CDN** pour la distribution des médias
-- **Cache** pour les métadonnées fréquemment consultées 
+- **Cache** pour les métadonnées fréquemment consultées
+
+### 🎯 **Système d'Activités - Nouveaux Endpoints (NOUVEAU)**
+
+#### **Endpoints Principaux des Activités**
+- **`GET /api/activites/`** : Liste de toutes les activités (accès public)
+- **`GET /api/activites/?lieu_id={id}`** : Activités d'un lieu spécifique (accès public)
+- **`POST /api/activites/`** : Créer une activité (authentifié + lieu visité)
+- **`PUT /api/activites/{id}/`** : Modifier une activité (créateur uniquement)
+- **`DELETE /api/activites/{id}/`** : Supprimer une activité (créateur uniquement)
+
+#### **Endpoints de Notation**
+- **`POST /api/activites/{id}/noter/`** : Noter une activité (authentifié + lieu visité)
+- **`GET /api/activites/{id}/notes/`** : Voir toutes les notes d'une activité (accès public)
+
+#### **Endpoints de Gestion des Notes**
+- **`GET /api/notes-activites/`** : Notes de l'utilisateur connecté
+- **`POST /api/notes-activites/`** : Créer une note
+- **`PUT /api/notes-activites/{id}/`** : Modifier une note
+- **`DELETE /api/notes-activites/{id}/`** : Supprimer une note
+
+#### **Permissions et Sécurité**
+- **Consultation** : Accès public pour tous les endpoints de lecture
+- **Création/Modification** : Authentification requise + validation des permissions
+- **Validation métier** : L'utilisateur doit avoir visité le lieu pour créer/noter
+- **Filtrage automatique** : Activités filtrées par lieu via paramètre `lieu_id` 
