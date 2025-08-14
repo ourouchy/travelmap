@@ -210,9 +210,9 @@ const updateUserBio = async (newBio) => {
       userProfileImage={userProfileImage} 
       setUserProfileImage={setUserProfileImage}
       uploadProfileImage={uploadProfileImage}
-      updateUserBio={updateUserBio} />;
+      updateUserBio={updateUserBio} 
       viewingUserId={viewingUserId}
-      setViewingUserId={setViewingUserId}
+      setViewingUserId={setViewingUserId}/>;
       case 'Activites': 
         return <Activites />;
       default: 

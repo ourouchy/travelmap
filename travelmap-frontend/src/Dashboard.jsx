@@ -1117,7 +1117,7 @@ if (selectedActiviteId) {
                 openActiviteForm(voyage.lieu);
               }}
             >
-              ➕ Ajouter activité
+              ➕ Ajouter une activité
             </button>
             <button
               onClick={(e) => {
@@ -1139,7 +1139,7 @@ if (selectedActiviteId) {
     <div className="card">
 {/* Section Mes Activités */}
 <div className= "section-header">  <h2 className="section-title">
-    🎯 Mes Activités Créées ({mesActivites.length})
+    🎯 Mes Activités ({mesActivites.length})
   </h2></div>
   {isLoadingActivites ? (
     <div className="loading-activities">
@@ -1160,7 +1160,8 @@ if (selectedActiviteId) {
       {mesActivites.map((activite) => (
         <div
           key={activite.id}
-          className="dashboard-card card-hover" onClick={() => handleActiviteClick(activite.id)}
+          className="dashboard-card card-hover" onClick={(e) => {
+      e.stopPropagation(); handleActiviteClick(activite.id)}}
         >
 
           {/* En-tête avec titre et note moyenne */}
@@ -1264,13 +1265,15 @@ if (selectedActiviteId) {
           {/* Boutons d'action */}
           <div className="actions">  
             <button
-              onClick={() => openEditForm(activite)}
+              onClick={(e) => {
+      e.stopPropagation(); openEditForm(activite)}}
               className="edit-button"
             >
               ✏️ Modifier
             </button>
             <button
-              onClick={() => handleDeleteActivite(activite.id)}
+              onClick={(e) => {
+      e.stopPropagation(); handleDeleteActivite(activite.id)}}
               className="delete"
             >
               🗑️ Supprimer
