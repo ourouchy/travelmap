@@ -211,6 +211,12 @@ button:active {
   cursor: not-allowed;
 }
 
+.disabled:hover {
+  background-color: var(--cancel-hover);
+  cursor: not-allowed;
+  transform: scale(1);
+}
+
 
 .clear-selection-button {
   background: none;
@@ -241,7 +247,6 @@ button:active {
 
 /* Carte */
 .card {
-  width: 100%;
   max-width: var(--card-max-width);
   margin: 2rem auto;
   background-color: var(--card-bg);
@@ -1281,7 +1286,32 @@ button:active {
   background-color: white;
 }
 
+/* ========== Lieu ========== */
+.lieu-infos{
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+.lieu-info{
+  text-align: center;
+  padding: 20px;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  min-width: 120px;
+}
 
+.lieu-note{
+  font-size: 1.5em;
+  font-weight: bold;
+   color: #ffd700;
+}
+
+.lieu-nb{
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #1976d2;
+}
 
 /* ========== Modals ========== */
 
@@ -1395,4 +1425,57 @@ button:active {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.leaflet-container {
+  z-index: 1 !important;
+}
+.button-group {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 40px);
+  max-width: 1200px;
+  display: flex;
+  padding: 10px 15px;
+  background: color-mix(in srgb, var(--card-bg) 40%, transparent);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+  border-radius: 0px 0px 8px 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+
+.button-group button:first-child {
+  margin-right: auto;
+}
+
+.button-group button:not(:first-child) {
+  margin-left: 10px;
+}
+
+.fav, .fav:hover {
+  background-color: transparent;
+  padding: 0;
+}
+
+.fav span {
+  font-size: 2rem;
+  display: inline-block;
+  transition: transform 0.3s ease;
+  padding-inline: 10px;
+}
+
+.fav:hover span {
+  transform: scale(1.2);
+}
+
+.pagination-button, .pagination-button:hover {
+  background-color: transparent;
+}
+
+
+.SVG{
+  color: var(--text-color);
 }
