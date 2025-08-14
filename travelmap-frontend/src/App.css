@@ -882,6 +882,9 @@ button:active {
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  height: auto;
 }
 
 .dashboard-card:hover {
@@ -905,6 +908,7 @@ button:active {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
+
 }
 
 .dashboard-rating {
@@ -941,6 +945,7 @@ button:active {
   display: flex;
   gap: 10px;
   justify-content: center;
+  margin-top: auto;
 }
 
 /* ========== Voyages ========== */
@@ -961,6 +966,7 @@ button:active {
   color: var(--text-color);
   opacity: 0.8;
   font-size: 0.9em;
+  text-align: left;
 }
 
 .voyage-dates {
@@ -981,6 +987,7 @@ button:active {
   font-size: 0.9em;
   font-style: italic;
   color: var(--text-color);
+  word-break: break-word;
 }
 
 .voyage-creation-date {
@@ -1389,12 +1396,3 @@ button:active {
   justify-content: space-between;
   align-items: center;
 }
-
-
-
-
-
-
-
-
-
