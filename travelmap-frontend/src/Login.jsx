@@ -44,7 +44,7 @@ const Login = ({ onLogin, onNavigate }) => {
 
   return (
     <div className="form-container">
-      <div className="card">
+      <div className="auth card">
         <h2>Connexion</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit} className="form-group">
@@ -74,7 +74,7 @@ const Login = ({ onLogin, onNavigate }) => {
             />
           </div>
           
-          <button type="submit" className="auth-button" disabled={loading}>
+          <button type="submit" disabled={loading}>
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
 

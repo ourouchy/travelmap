@@ -65,7 +65,7 @@ const Register = ({ onRegister, onNavigate }) => {
 
   return (
     <div className="form-container">
-      <div className="card">
+      <div className="auth card">
         <h2>Créer un compte</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit} className="form-group">
@@ -121,7 +121,7 @@ const Register = ({ onRegister, onNavigate }) => {
             />
           </div>
           
-          <button type="submit" className="auth-button" disabled={loading}>
+          <button type="submit" disabled={loading}>
             {loading ? 'Inscription...' : 'S\'inscrire'}
           </button>
 

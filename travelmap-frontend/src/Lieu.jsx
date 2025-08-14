@@ -3,7 +3,7 @@ import Map from './components/Map';
 import VoyageDetail from './VoyageDetail';
 import ActiviteDetail from './ActiviteDetail';
 
-const Lieu = ({ lieuId, lieuData, onNavigateBack }) => {
+const Lieu = ({ lieuId, lieuData, onNavigateBack, setViewingUserId, setCurrentPage }) => {
   const [lieuDetails, setLieuDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -343,9 +343,16 @@ const Lieu = ({ lieuId, lieuData, onNavigateBack }) => {
                     alignItems: 'center',
                     marginBottom: '15px'
                   }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '1.1em', color: '#333' }}>
-                      {voyage.utilisateur?.username || 'Utilisateur'}
-                    </div>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.1em', color: '#333', cursor: 'pointer', textDecoration: 'underline'}}
+                    onClick={() => {
+                      if (voyage.utilisateur?.id) {
+                        setViewingUserId(voyage.utilisateur.id);
+                        setCurrentPage('Profile');
+                      }
+                    }}
+                  >
+                    {voyage.utilisateur?.username || 'Utilisateur'}
+                  </div>
                     {voyage.note && (
                       <div style={{ 
                         backgroundColor: '#ffd700', 
