@@ -1841,7 +1841,7 @@ button:active {
 
 .voyage-detail-comment {
   background-color: var(--empty-bg);
-  padding: 20px;
+  padding: 4px 20px 20px 20px;
   border-radius: 8px;
   margin-top: 20px;
 }
