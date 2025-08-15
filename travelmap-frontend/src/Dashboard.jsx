@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import VoyageDetail from './VoyageDetail';
 import ActiviteDetail from './ActiviteDetail';
 
-const Dashboard = () => {
+const Dashboard = ({ setViewingUserId, setCurrentPage, onNavigateToLieu }) => {
   // États communs
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -10,6 +10,8 @@ const Dashboard = () => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [selectedVoyageId, setSelectedVoyageId] = useState(null);
   const [selectedActiviteId, setSelectedActiviteId] = useState(null);
+  const [displayedVoyagesCount, setDisplayedVoyagesCount] = useState(3);
+  const [displayedActivitesCount, setDisplayedActivitesCount] = useState(3);
 
   // États pour les voyages (de Trip.jsx)
   const [voyages, setVoyages] = useState([]);
@@ -78,9 +80,17 @@ const Dashboard = () => {
     }
   }, [isAuthenticated]);
 
+const ArrowUpSVG = () => (
+  <svg className="SVG" width="30" height="30" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
+    <path fill="currentColor" stroke="currentColor" strokeWidth="1.5" d="M23.245 20l-11.245-14.374-11.219 14.374-.781-.619 12-15.381 12 15.391-.755.609z"/>
+  </svg>
+);
 
-
-
+const ArrowDownSVG = () => (
+  <svg className="SVG" width="30" height="30" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
+    <path fill="currentColor" stroke="currentColor" strokeWidth="1.5" d="M23.245 4l-11.245 14.374-11.219-14.374-.781.619 12 15.381 12-15.391-.755-.609z"/>
+  </svg>
+);
 
 const handleVoyageClick = (voyageId) => {
   setSelectedVoyageId(voyageId);
@@ -97,9 +107,34 @@ const handleActiviteClick = (activiteId) => {
 const handleBackFromActivite = () => {
   setSelectedActiviteId(null);
 };
-  // Fonctions pour les voyages (de Trip.jsx)
-  const handleFileSelect = (event) => {
-    const files = Array.from(event.target.files);
+
+const showMoreVoyages = () => {
+  setDisplayedVoyagesCount(prev => prev + 3);
+};
+
+const showLessVoyages = () => {
+  setDisplayedVoyagesCount(prev => Math.max(3, prev - 3));
+};
+
+const showMoreActivites = () => {
+  setDisplayedActivitesCount(prev => prev + 3);
+};
+
+const showLessActivites = () => {
+  setDisplayedActivitesCount(prev => Math.max(3, prev - 3));
+};
+
+const handleFileSelect = (event) => {
+  const files = Array.from(event.target.files);
+  
+  if (showActiviteForm) {
+    // Pour le formulaire d'activité
+    setActiviteFormData(prev => ({
+      ...prev,
+      medias: [...prev.medias, ...files]
+    }));
+  } else {
+    // Pour le formulaire de voyage
     setSelectedFiles(files);
     
     const previews = files.map(file => {
@@ -120,9 +155,19 @@ const handleBackFromActivite = () => {
     }).filter(Boolean);
     
     setFilePreview(previews);
-  };
+  }
+};
 
-  const removeFile = (index) => {
+const removeFile = (index) => {
+  if (showActiviteForm) {
+    // Pour le formulaire d'activité
+    setActiviteFormData(prev => {
+      const newMedias = [...prev.medias];
+      newMedias.splice(index, 1);
+      return { ...prev, medias: newMedias };
+    });
+  } else {
+    // Pour le formulaire de voyage
     const newFiles = selectedFiles.filter((_, i) => i !== index);
     const newPreviews = filePreview.filter((_, i) => i !== index);
     
@@ -132,9 +177,15 @@ const handleBackFromActivite = () => {
     if (filePreview[index]?.preview) {
       URL.revokeObjectURL(filePreview[index].preview);
     }
-  };
+  }
+};
 
-  const clearFiles = () => {
+const clearFiles = () => {
+  if (showActiviteForm) {
+    // Pour le formulaire d'activité
+    setActiviteFormData(prev => ({ ...prev, medias: [] }));
+  } else {
+    // Pour le formulaire de voyage
     setSelectedFiles([]);
     filePreview.forEach(preview => {
       if (preview?.preview) {
@@ -142,8 +193,8 @@ const handleBackFromActivite = () => {
       }
     });
     setFilePreview([]);
-  };
-
+  }
+};
   const fetchVoyages = async () => {
     if (!isAuthenticated) return;
     
@@ -761,23 +812,30 @@ const handleBackFromActivite = () => {
     );
   }
 
-      if (selectedVoyageId) {
-  return (
-    <VoyageDetail 
-      voyageId={selectedVoyageId} 
-      onNavigateBack={handleBackFromVoyage}
-    />
-  );
-}
+  if (selectedVoyageId) {
+    return (
+      <VoyageDetail 
+        voyageId={selectedVoyageId} 
+        onNavigateBack={handleBackFromVoyage}
+        setViewingUserId={setViewingUserId}
+        setCurrentPage={setCurrentPage}
+        onNavigateToLieu={onNavigateToLieu}
+      />
+    );
+  }
 
-if (selectedActiviteId) {
-  return (
-    <ActiviteDetail 
-      activiteId={selectedActiviteId} 
-      onNavigateBack={handleBackFromActivite}
-    />
-  );
-}
+  if (selectedActiviteId) {
+    return (
+      <ActiviteDetail 
+        activiteId={selectedActiviteId} 
+        onNavigateBack={handleBackFromActivite}
+        setViewingUserId={setViewingUserId}
+        setCurrentPage={setCurrentPage}
+        onNavigateToLieu={onNavigateToLieu}
+      />
+    );
+  }
+
 
   return (
 
@@ -1061,7 +1119,10 @@ if (selectedActiviteId) {
     </div>
   ) : (
     <div className="dashboard-grid">
-      {voyages.map((voyage) => (
+      {voyages
+        .sort((a, b) => new Date(b.date_creation) - new Date(a.date_creation))
+        .slice(0, displayedVoyagesCount)
+        .map((voyage) => (
         <div
           key={voyage.id}
           className="dashboard-card card-hover" onClick={(e) => {
@@ -1132,8 +1193,31 @@ if (selectedActiviteId) {
         </div>
       ))}
     </div>
+    
   )}
 </div>
+
+  {/* Contrôles de pagination */}
+  {voyages.length > 3 && (
+    <div className="pagination-controls">
+      {displayedVoyagesCount > 3 && (
+        <button 
+          onClick={showLessVoyages}
+          className="pagination-button"
+        >
+          <ArrowUpSVG />
+        </button>
+      )}
+      {displayedVoyagesCount < voyages.length && (
+        <button 
+          onClick={showMoreVoyages}
+          className="pagination-button"
+        >
+          <ArrowDownSVG />
+        </button>
+      )}
+    </div>
+)}
 </div>
 </div>
     <div className="card">
@@ -1156,8 +1240,11 @@ if (selectedActiviteId) {
       </p>
     </div>
   ) : (
-    <div className="dashboard-grid">
-      {mesActivites.map((activite) => (
+      <div className="dashboard-grid">
+        {mesActivites
+          .sort((a, b) => new Date(b.date_creation) - new Date(a.date_creation))
+          .slice(0, displayedActivitesCount)
+          .map((activite) => (
         <div
           key={activite.id}
           className="dashboard-card card-hover" onClick={(e) => {
@@ -1283,6 +1370,26 @@ if (selectedActiviteId) {
       ))}
     </div>
   )}
+  {mesActivites.length > 3 && (
+  <div className="pagination-controls">
+    {displayedActivitesCount > 3 && (
+      <button 
+        onClick={showLessActivites}
+        className="pagination-button"
+      >
+        <ArrowUpSVG />
+      </button>
+    )}
+    {displayedActivitesCount < mesActivites.length && (
+      <button 
+        onClick={showMoreActivites}
+        className="pagination-button"
+      >
+        <ArrowDownSVG />
+      </button>
+    )}
+  </div>
+)}
       </div>
 {/* Modal du formulaire d'activité */}
 {showActiviteForm && selectedLieu && (
@@ -1498,16 +1605,51 @@ if (selectedActiviteId) {
           
           {/* Aperçu des fichiers sélectionnés */}
           {activiteFormData.medias.length > 0 && (
-            <div className="activity-media">
+            <div className="media-preview-section">
               <div className="media-header">
-                📁 Fichiers sélectionnés ({activiteFormData.medias.length}) :
+                📁 Fichiers sélectionnés ({activiteFormData.medias.length})
               </div>
-              {activiteFormData.medias.map((file, index) => (
-                <div key={index} className="media-item">
-                  {file.type.startsWith('image/') ? '🖼️' : '🎥'} 
-                  {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                </div>
-              ))}
+              <div className="media-preview-grid">
+                {activiteFormData.medias.map((file, index) => (
+                  <div key={index} className="media-preview-item">
+                    {file.type.startsWith('image/') ? (
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`Preview ${index + 1}`}
+                        className="media-preview-image"
+                      />
+                    ) : (
+                      <div className="media-preview-video-placeholder">
+                        🎥 Vidéo
+                      </div>
+                    )}
+                    
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="media-preview-remove-button"
+                    >
+                      ✕
+                    </button>
+                    
+                    <div className="media-preview-filename">
+                      {file.name.length > 20 
+                        ? file.name.substring(0, 20) + '...'
+                        : file.name
+                      }
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <button
+                type="button" 
+                onClick={clearFiles} 
+                className="delete" 
+                style={{ marginTop: '10px' }}
+              >
+                Effacer tous les fichiers
+              </button>
             </div>
           )}
         </div>
@@ -1541,7 +1683,7 @@ if (selectedActiviteId) {
         <h2 style={{ margin: 0 }}>✏️ Modifier l'Activité</h2>
         <button
           onClick={closeEditForm}
-          className="modal-close-button"
+          className="close"
         >
           ✕
         </button>

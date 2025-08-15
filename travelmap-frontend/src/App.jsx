@@ -8,6 +8,7 @@ import Profile from './Profile';
 import Dashboard from './Dashboard';
 import Lieu from './Lieu';
 import Navbar from './Navbar';
+import Footer from './Footer';
 import Activites from './Activites';
 import Favoris from './Favoris';
 import UserPublicProfile from './UserPublicProfile';
@@ -145,102 +146,6 @@ const loadUserProfile = async () => {
     }
   } catch (error) {
     console.error("Error loading user profile:", error);
-  }
-};
-
-// Nouvelle fonction pour charger l'image de profil depuis l'API
-const loadUserProfileImage = async () => {
-  try {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
-
-    const response = await fetch('http://localhost:8000/api/profile/detail/', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('Réponse API profil:', data); // Debug
-      
-      // Mettre à jour l'image de profil avec l'URL du serveur
-      if (data.profile_image_url) {
-          // Construire l'URL complète si nécessaire
-          let imageUrl = data.profile_image_url;
-          console.log('URL reçue:', imageUrl); // Debug
-          
-          if (imageUrl && !imageUrl.startsWith('http')) {
-            // Si c'est une URL relative, construire l'URL complète
-            if (imageUrl.startsWith('/media/')) {
-              imageUrl = `http://localhost:8000${imageUrl}`;
-            } else if (imageUrl.startsWith('media/')) {
-              imageUrl = `http://localhost:8000/${imageUrl}`;
-            } else {
-              imageUrl = `http://localhost:8000/media/${imageUrl}`;
-            }
-          }
-          
-          console.log('URL finale construite:', imageUrl); // Debug
-          
-          // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
-          setUserProfileImage(imageUrl);
-          if (user && user.id) {
-            const userSpecificImageKey = `userProfileImage_${user.id}`;
-            localStorage.setItem(userSpecificImageKey, imageUrl);
-          }
-          
-          // Mettre à jour l'utilisateur dans le state
-          const userData = JSON.parse(localStorage.getItem('user'));
-          const updatedUser = { ...userData, profile_image: imageUrl };
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          
-          // Message de confirmation
-          alert('Photo de profil enregistrée avec succès !');
-        } else if (data.profile_image) {
-          // Fallback avec profile_image
-          let imageUrl = data.profile_image;
-          console.log('Fallback - profile_image:', imageUrl); // Debug
-          
-          if (imageUrl && !imageUrl.startsWith('http')) {
-            if (imageUrl.startsWith('/media/')) {
-              imageUrl = `http://localhost:8000${imageUrl}`;
-            } else if (imageUrl.startsWith('media/')) {
-              imageUrl = `http://localhost:8000/${imageUrl}`;
-            } else {
-              imageUrl = `http://localhost:8000/media/${imageUrl}`;
-            }
-          }
-          
-          console.log('URL finale fallback:', imageUrl); // Debug
-          
-          // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
-          setUserProfileImage(imageUrl);
-          if (user && user.id) {
-            const userSpecificImageKey = `userProfileImage_${user.id}`;
-            localStorage.setItem(userSpecificImageKey, imageUrl);
-          }
-          
-          const userData = JSON.parse(localStorage.getItem('user'));
-          const updatedUser = { ...userData, profile_image: imageUrl };
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          
-          alert('Photo de profil enregistrée avec succès !');
-        } else {
-          console.log('Aucune URL d\'image trouvée dans la réponse'); // Debug
-          console.log('Champs disponibles:', Object.keys(data)); // Debug
-          alert('Photo uploadée mais URL non reçue');
-        }
-    } else {
-      const errorData = await response.json();
-      alert(`Erreur lors de la sauvegarde de la photo: ${errorData.error || 'Erreur inconnue'}`);
-      // Revenir à l'image précédente en cas d'erreur
-      setUserProfileImage(userProfileImage);
-    }
-  } catch (error) {
-    console.error("Erreur lors de l'upload:", error);
-    alert("Erreur lors de la mise à jour de l'image de profil");
-    setUserProfileImage(userProfileImage); // Revenir à l'image précédente
   }
 };
 
@@ -417,7 +322,11 @@ const updateUserBio = async (newBio) => {
       case 'Trip': 
         return <Trip />;
       case 'Dashboard': 
-        return <Dashboard />;
+        return <Dashboard 
+          setViewingUserId={setViewingUserId}
+          setCurrentPage={setCurrentPage}
+          onNavigateToLieu={navigateToLieu}
+        />;
       case 'Lieu': 
         return <Lieu 
           lieuId={lieuId} 
@@ -428,19 +337,19 @@ const updateUserBio = async (newBio) => {
         />;
      case 'Profile': 
         return <Profile onLogout={handleLogout} 
-      user={user} 
-      userProfileImage={userProfileImage} 
-      setUserProfileImage={setUserProfileImage}
-      uploadProfileImage={uploadProfileImage}
-      updateUserBio={updateUserBio} 
-      viewingUserId={viewingUserId}
-      setViewingUserId={setViewingUserId}/>;
+          user={user} 
+          userProfileImage={userProfileImage} 
+          setUserProfileImage={setUserProfileImage}
+          uploadProfileImage={uploadProfileImage}
+          updateUserBio={updateUserBio} 
+          viewingUserId={viewingUserId}
+          setViewingUserId={setViewingUserId}
+          onNavigateBack={navigateBackFromUserProfile}/>;
       case 'Activites': 
         return <Activites />;
       case 'Favoris':
         return <Favoris 
           onNavigateBack={() => setCurrentPage('Index')}
-          setCurrentPage={setCurrentPage}
           onNavigateToLieu={navigateToLieu}
         />;
       case 'UserPublicProfile':
@@ -465,9 +374,10 @@ const updateUserBio = async (newBio) => {
         user={user}
       />
       
-      <div>
+      <div style={{ minHeight: 'calc(100vh - 140px)' }}>
         {renderPage()}
       </div>
+      <Footer isDarkMode={isDarkMode} />
     </div>
   );
 };

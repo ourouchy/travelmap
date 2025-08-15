@@ -6,13 +6,10 @@ const Profile = ({
   setUserProfileImage, 
   user, 
   onLogout,
-  uploadProfileImage,
-  updateUserBio,
   viewingUserId,
-  setViewingUserId
+  setViewingUserId,
+  onNavigateBack
 }) => {
-  const [profileUser, setProfileUser] = useState(user);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [editBio, setEditBio] = useState(false);
   const [newBio, setNewBio] = useState(user?.bio || 'Une petite biographie ici...');
   const [isLoading, setIsLoading] = useState(false);
@@ -404,6 +401,15 @@ const handleBioSave = async () => {
   }, [isCurrentUser, user]);
 
   return (
+  <div>
+      <div className="button-group">
+        <button
+          onClick={onNavigateBack}
+          className="cancel"
+        >
+          ← Retour
+        </button>
+      </div>
     <div className="card profile">
       {isLoading && (
         <div className="loading-overlay">
@@ -532,6 +538,7 @@ const handleBioSave = async () => {
             )}
           </div>
       </div>
+    </div>
   );
 };
 

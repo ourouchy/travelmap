@@ -13,16 +13,13 @@ const UserPublicProfile = ({ userId, onNavigateBack, setCurrentPage }) => {
     }
   }, [userId]);
 
-  // Fonction pour construire l'URL complète de l'image de profil
   const getProfileImageUrl = (imageUrl) => {
     if (!imageUrl) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
     
-    // Si c'est déjà une URL complète, la retourner
     if (imageUrl.startsWith('http')) {
       return imageUrl;
     }
     
-    // Construire l'URL complète avec le serveur backend
     if (imageUrl.startsWith('/media/')) {
       return `http://localhost:8000${imageUrl}`;
     } else if (imageUrl.startsWith('media/')) {
@@ -59,7 +56,7 @@ const UserPublicProfile = ({ userId, onNavigateBack, setCurrentPage }) => {
 
   if (isLoading) {
     return (
-      <div className="container">
+      <div className="card profile">
         <div className="loading">Chargement du profil...</div>
       </div>
     );
@@ -67,9 +64,9 @@ const UserPublicProfile = ({ userId, onNavigateBack, setCurrentPage }) => {
 
   if (error) {
     return (
-      <div className="container">
+      <div className="card profile">
         <div className="error">{error}</div>
-        <button onClick={handleBackClick} className="back-button">
+        <button onClick={handleBackClick} className="auth-button">
           Retour
         </button>
       </div>
@@ -78,9 +75,9 @@ const UserPublicProfile = ({ userId, onNavigateBack, setCurrentPage }) => {
 
   if (!userProfile) {
     return (
-      <div className="container">
+      <div className="card profile">
         <div className="error">Profil non trouvé</div>
-        <button onClick={handleBackClick} className="back-button">
+        <button onClick={handleBackClick} className="auth-button">
           Retour
         </button>
       </div>
@@ -88,45 +85,76 @@ const UserPublicProfile = ({ userId, onNavigateBack, setCurrentPage }) => {
   }
 
   return (
-    <div className="container">
-      {/* Header avec bouton retour */}
-      <div className="profile-header">
-        <button onClick={handleBackClick} className="back-button">
-          ← Retour
-        </button>
-        <h1>Profil de {userProfile.first_name} {userProfile.last_name}</h1>
-      </div>
+<div>
+    <div className="button-group">
+        <button className="cancel" onClick={onNavigateBack}>← Retour</button>
 
-      {/* Informations de base */}
-      <div className="profile-section">
-        <div className="profile-avatar">
+      </div>
+    <div className="card profile">
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+        </div>
+      )}
+      
+      <h1>Profil de {userProfile.first_name} {userProfile.last_name}</h1>
+      
+      <div className="profile-avatar-wrapper">
+        <div className="profile-avatar-large">
           <img 
             src={getProfileImageUrl(userProfile.profile_image_url)} 
             alt={`${userProfile.first_name} ${userProfile.last_name}`}
-            className="avatar-image"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
+            }}
           />
-        </div>
-        
-        <div className="profile-info">
-          <h2>{userProfile.first_name} {userProfile.last_name}</h2>
-          <p className="username">@{userProfile.username}</p>
-          {userProfile.bio && (
-            <p className="bio">{userProfile.bio}</p>
-          )}
-          <p className="member-since">
-            Membre depuis {new Date(userProfile.date_joined).toLocaleDateString('fr-FR')}
-          </p>
         </div>
       </div>
 
-      {/* Statistiques */}
-      <div className="profile-section">
+      <div className="form-group">
+        <h3>Biographie</h3>
+        <div className="profile-bio-content">
+          {userProfile.bio || "Cet utilisateur n'a pas encore de biographie..."}
+        </div>
+      </div>
+
+      <div className="form-group">
+        <h3>Informations du compte</h3>
+        <div className="user-info">
+          <label className="form-label">Nom d'utilisateur</label>
+          <div className="input profile-info-field">
+            @{userProfile.username}
+          </div>
+          
+          <label className="form-label">Membre depuis</label>
+          <div className="input profile-info-field">
+            {new Date(userProfile.date_joined).toLocaleDateString('fr-FR')}
+          </div>
+
+          <label className="form-label">
+            <span style={{ marginRight: '0.5rem' }}>🎯</span>
+            Score total
+          </label>
+          <div className="input profile-info-field score-field">
+            <span style={{ 
+              fontSize: '1.2em', 
+              fontWeight: 'bold', 
+              color: '#1976d2',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span>🏆</span>
+              {userProfile.score_total} points
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="form-group">
         <h3>Statistiques</h3>
         <div className="stats-grid">
-          <div className="stat-item">
-            <div className="stat-value">🎯 {userProfile.score_total}</div>
-            <div className="stat-label">Score total</div>
-          </div>
           <div className="stat-item">
             <div className="stat-value">✈️ {userProfile.nombre_voyages}</div>
             <div className="stat-label">Voyages</div>
@@ -138,9 +166,8 @@ const UserPublicProfile = ({ userId, onNavigateBack, setCurrentPage }) => {
         </div>
       </div>
 
-      {/* Pays visités - Remplacé par la carte mondiale */}
       {userProfile.pays_visites && userProfile.pays_visites.length > 0 && (
-        <div className="profile-section">
+        <div className="form-group">
           <h3>🌍 Carte des pays visités ({userProfile.pays_visites.length})</h3>
           <div className="world-map-container">
             <WorldMap 
@@ -162,23 +189,23 @@ const UserPublicProfile = ({ userId, onNavigateBack, setCurrentPage }) => {
         </div>
       )}
 
-      {/* Actions */}
-      <div className="profile-actions">
+      <div className="form-group" style={{ display: 'flex', gap: '1rem' }}>
         <button 
           onClick={() => setCurrentPage('Index')} 
-          className="action-button"
+          className="auth-button"
         >
           Voir les voyages
         </button>
         <button 
           onClick={() => setCurrentPage('Activites')} 
-          className="action-button"
+          className="auth-button"
         >
           Voir les activités
         </button>
       </div>
     </div>
+    </div>
   );
 };
 
-export default UserPublicProfile; 
+export default UserPublicProfile;

@@ -3,7 +3,7 @@ import Map from './components/Map';
 import VoyageDetail from './VoyageDetail';
 import ActiviteDetail from './ActiviteDetail';
 
-const Lieu = ({ lieuId, lieuData, onNavigateBack, setViewingUserId, setCurrentPage }) => {
+const Lieu = ({ lieuId, lieuData, onNavigateBack, setViewingUserId, setCurrentPage, onNavigateToLieu }) => {
   const [lieuDetails, setLieuDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -396,6 +396,16 @@ const Lieu = ({ lieuId, lieuData, onNavigateBack, setViewingUserId, setCurrentPa
     setSelectedActiviteId(null);
   };
 
+const handleUserClick = (userId) => {
+  const currentUser = JSON.parse(localStorage.getItem('user') || {});
+  if (userId === currentUser.id) {
+    setCurrentPage('Profile');
+  } else {
+    setViewingUserId(userId);
+    setCurrentPage('UserPublicProfile');
+  }
+};
+
   const showMoreVoyages = () => {
     setDisplayedVoyagesCount(prev => prev + 3);
   };
@@ -512,6 +522,7 @@ const ArrowDownSVG = () => (
         onNavigateBack={handleBackFromVoyage}
         setViewingUserId={setViewingUserId}
         setCurrentPage={setCurrentPage}
+        onNavigateToLieu={onNavigateToLieu}
       />
     );
   }
@@ -523,6 +534,7 @@ const ArrowDownSVG = () => (
         onNavigateBack={handleBackFromActivite}
         setViewingUserId={setViewingUserId}
         setCurrentPage={setCurrentPage}
+        onNavigateToLieu={onNavigateToLieu}
       />
     );
   }
@@ -573,9 +585,7 @@ const ArrowDownSVG = () => (
             disabled={isFavoriteLoading}
             title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           >
-            {isFavoriteLoading ? (
-              <span>⏳</span>
-            ) : isFavorite ? (
+            {isFavorite ? (
               <span>❤️</span>
             ) : (
               <span>🤍</span>
@@ -585,7 +595,7 @@ const ArrowDownSVG = () => (
       </div>
 
       {/* En-tête du lieu avec carte */}
-      <div className="card" style={{ marginTop: '80px' }}>
+      <div className="card">
         <Map
           latitude={lieuDetails.latitude}
           longitude={lieuDetails.longitude}
@@ -1084,17 +1094,11 @@ const ArrowDownSVG = () => (
             >
                   <div className="dashboard-header">
                     <div 
-                      className="dashboard-title clickable-username"
-                      onClick={() => {
-                        if (voyage.utilisateur?.id) {
-                          setViewingUserId(voyage.utilisateur.id);
-                          setCurrentPage('UserPublicProfile');
-                        }
-                      }}
-                      style={{ cursor: 'pointer', textDecoration: 'underline', color: '#007bff' }}
+                      className="clickable"
+                      onClick={() => handleUserClick(voyage.utilisateur?.id)}
                       title="Cliquer pour voir le profil"
                     >
-                      {voyage.utilisateur?.username || 'Utilisateur'}
+                     Voyage de {voyage.utilisateur?.username || 'Utilisateur'}
                     </div>
                     {voyage.note && (
                       <div className="voyage-rating">
@@ -1252,14 +1256,8 @@ const ArrowDownSVG = () => (
                   </div>
                   <div className="activity-info">
                     <span 
-                      className="clickable-username"
-                      onClick={() => {
-                        if (activite.cree_par?.id) {
-                          setViewingUserId(activite.cree_par.id);
-                          setCurrentPage('UserPublicProfile');
-                        }
-                      }}
-                      style={{ cursor: 'pointer', textDecoration: 'underline', color: '#007bff' }}
+                      className="clickable"
+                      onClick={() => handleUserClick(activite.cree_par?.id)}
                       title="Cliquer pour voir le profil"
                     >
                       👤 Par {activite.cree_par?.username || 'Utilisateur'}

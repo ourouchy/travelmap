@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const Favoris = ({ onNavigateBack, setCurrentPage, onNavigateToLieu }) => {
+const Favoris = ({ onNavigateBack, onNavigateToLieu }) => {
   const [favoris, setFavoris] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,7 +62,6 @@ const Favoris = ({ onNavigateBack, setCurrentPage, onNavigateToLieu }) => {
   };
 
   const handleLieuClick = (lieuId, lieuData) => {
-    // Navigation vers la page du lieu en utilisant le même mécanisme que la barre de recherche
     if (onNavigateToLieu) {
       onNavigateToLieu(lieuId, lieuData);
     }
