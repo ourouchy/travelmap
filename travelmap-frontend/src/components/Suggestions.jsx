@@ -84,14 +84,13 @@ const Suggestions = ({ token, onRefresh, onNavigateToLieu }) => {
 
   return (
     <div className="suggestions-container">
-      <div className="suggestions-header">
-        <h3>💡 Suggestions pour vous</h3>
+      <div className="section-header">
+        <h3>💡 Suggestions</h3>
         <button 
-          className="btn-refresh" 
           onClick={fetchSuggestions}
           disabled={isLoading}
         >
-          🔄 Actualiser
+          Actualiser
         </button>
       </div>
       
@@ -99,12 +98,12 @@ const Suggestions = ({ token, onRefresh, onNavigateToLieu }) => {
         {suggestions.map((suggestion) => (
           <div 
             key={suggestion.id} 
-            className="suggestion-card"
+            className="dashboard-card"
             onClick={() => onNavigateToLieu(suggestion.id)}
           >
             <div className="suggestion-info">
               <div className="suggestion-city">{suggestion.nom_ville}</div>
-              <div className="suggestion-country">{suggestion.pays.nom}</div>
+              <div className="voyage-date">{suggestion.pays.nom}</div>
             </div>
             <div className="suggestion-arrow">→</div>
           </div>
