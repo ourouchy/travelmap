@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Map from './components/Map';
 
-const ActiviteDetail = ({ activiteId, onNavigateBack }) => {
+const ActiviteDetail = ({ activiteId, onNavigateBack, setViewingUserId, setCurrentPage }) => {
   const [activite, setActivite] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -759,7 +759,22 @@ const ActiviteDetail = ({ activiteId, onNavigateBack }) => {
                     alignItems: 'center',
                     marginBottom: '15px'
                   }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '1.1em', color: '#333' }}>
+                    <div 
+                      style={{ 
+                        fontWeight: 'bold', 
+                        fontSize: '1.1em', 
+                        color: '#007bff',
+                        cursor: 'pointer',
+                        textDecoration: 'underline'
+                      }}
+                      onClick={() => {
+                        if (note.utilisateur?.id) {
+                          setViewingUserId(note.utilisateur.id);
+                          setCurrentPage('UserPublicProfile');
+                        }
+                      }}
+                      title="Cliquer pour voir le profil"
+                    >
                       {note.utilisateur?.username || 'Utilisateur'}
                     </div>
                     <div style={{ 

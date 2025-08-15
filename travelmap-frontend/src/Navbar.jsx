@@ -63,6 +63,12 @@ const Navbar = ({ isAuthenticated, setCurrentPage, handleLogout, toggleTheme, is
                     Dashboard
                   </button>
                   <button onClick={() => {
+                    setCurrentPage('Favoris');
+                    setDropdownOpen(false);
+                  }}>
+                    Favoris
+                  </button>
+                  <button onClick={() => {
                     handleLogout();
                     setDropdownOpen(false);
                   }}>

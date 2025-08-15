@@ -72,6 +72,20 @@ Ce document explique **ce qui est implémenté côté backend** et **ce qui rest
 - Montrer les statistiques de voyage
 - Calculer des métriques
 
+## **Profil Public des Autres Utilisateurs - IMPLÉMENTÉ (NOUVEAU)**
+
+### Ce qui marche
+- **Profil public** : GET `/api/users/{user_id}/profile/`
+- **Données publiques** : Nom, prénom, bio, photo de profil, score, statistiques
+- **Statistiques** : Nombre de voyages, activités créées, pays visités
+- **Accès public** : Aucune authentification requise
+
+### Ce que le frontend peut faire
+- Afficher le profil d'autres utilisateurs
+- Créer des liens cliquables vers les profils
+- Montrer les statistiques publiques des autres utilisateurs
+- Naviguer entre les profils utilisateurs
+
 ## **Gestion des Pays - IMPLÉMENTÉ **
 
 ### Ce qui marche
@@ -277,6 +291,9 @@ Ce document explique **ce qui est implémenté côté backend** et **ce qui rest
 - **Score** : `GET /api/score/`
 - **GeoNames** : `GET /api/geonames/search/`
 
+### Nouveaux Endpoints Implémentés (Session Actuelle)
+- **Profil public** : `GET /api/users/{user_id}/profile/` - Profil public des autres utilisateurs
+
 ---
 
 ## **État Actuel**
@@ -287,6 +304,7 @@ Ce document explique **ce qui est implémenté côté backend** et **ce qui rest
 - ✅ Authentification JWT
 - ✅ Validation des données de base
 - ✅ Permissions et sécurité de base
+- ✅ Profil public des autres utilisateurs (NOUVEAU)
 - ⚠️ Lieux : Lecture seule (pas de création/modification via API)
 - ❌ Modèles avancés (Activité, Quizz, Media, Score)
 - ❌ API REST pour fonctionnalités avancées

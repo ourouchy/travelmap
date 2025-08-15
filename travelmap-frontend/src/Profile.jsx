@@ -17,6 +17,7 @@ const Profile = ({
   const [newBio, setNewBio] = useState(user?.bio || 'Une petite biographie ici...');
   const [isLoading, setIsLoading] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+  const [userScore, setUserScore] = useState(0); // 🎯 Nouveau state pour le score
   const fileInputRef = useRef(null);
   const avatarMenuRef = useRef(null);
 
@@ -56,16 +57,106 @@ const Profile = ({
 
     try {
       setIsLoading(true);
-      const serverImageUrl = await uploadProfileImage(file);
       
-      if (serverImageUrl) {
-        setUserProfileImage(serverImageUrl);
-        localStorage.setItem('userProfileImage', serverImageUrl);
+      // Créer un FormData pour l'upload de fichier
+      const formData = new FormData();
+      formData.append('profile_image', file);
+      
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Vous devez être connecté pour changer votre photo de profil');
+        return;
+      }
+
+      const response = await fetch('http://localhost:8000/api/profile/detail/', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Ne pas mettre Content-Type pour FormData, Django le gère automatiquement
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const updatedProfile = await response.json();
+        console.log('Réponse API profil:', updatedProfile); // Debug
         
-        // Mettre à jour l'utilisateur dans le state
-        const userData = JSON.parse(localStorage.getItem('user'));
-        const updatedUser = { ...userData, profile_image: serverImageUrl };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        // Mettre à jour l'image de profil avec l'URL du serveur
+        if (updatedProfile.profile_image_url) {
+            // Construire l'URL complète si nécessaire
+            let imageUrl = updatedProfile.profile_image_url;
+            console.log('URL reçue:', imageUrl); // Debug
+            
+            if (imageUrl && !imageUrl.startsWith('http')) {
+              // Si c'est une URL relative, construire l'URL complète
+              if (imageUrl.startsWith('/media/')) {
+                imageUrl = `http://localhost:8000${imageUrl}`;
+              } else if (imageUrl.startsWith('media/')) {
+                imageUrl = `http://localhost:8000/${imageUrl}`;
+              } else {
+                imageUrl = `http://localhost:8000/media/${imageUrl}`;
+              }
+            }
+            
+            console.log('URL finale construite:', imageUrl); // Debug
+            
+            // Mettre à jour le state global (navbar) ET local
+            setUserProfileImage(imageUrl);
+            // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+            if (user && user.id) {
+              const userSpecificImageKey = `userProfileImage_${user.id}`;
+              localStorage.setItem(userSpecificImageKey, imageUrl);
+            }
+            localStorage.setItem('userProfileImage', imageUrl);
+            
+            // Mettre à jour l'utilisateur dans le state
+            const userData = JSON.parse(localStorage.getItem('user'));
+            const updatedUser = { ...userData, profile_image: imageUrl };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            
+            // Message de confirmation
+            alert('Photo de profil enregistrée avec succès !');
+          } else if (updatedProfile.profile_image) {
+            // Fallback: essayer avec profile_image au lieu de profile_image_url
+            let imageUrl = updatedProfile.profile_image;
+            console.log('Fallback - profile_image:', imageUrl); // Debug
+            
+            if (imageUrl && !imageUrl.startsWith('http')) {
+              if (imageUrl.startsWith('/media/')) {
+                imageUrl = `http://localhost:8000${imageUrl}`;
+              } else if (imageUrl.startsWith('media/')) {
+                imageUrl = `http://localhost:8000/${imageUrl}`;
+              } else {
+                imageUrl = `http://localhost:8000/media/${imageUrl}`;
+              }
+            }
+            
+            console.log('URL finale fallback:', imageUrl); // Debug
+            
+            // Mettre à jour le state global (navbar) ET local
+            setUserProfileImage(imageUrl);
+            // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+            if (user && user.id) {
+              const userSpecificImageKey = `userProfileImage_${user.id}`;
+              localStorage.setItem(userSpecificImageKey, imageUrl);
+            }
+            localStorage.setItem('userProfileImage', imageUrl);
+            
+            const userData = JSON.parse(localStorage.getItem('user'));
+            const updatedUser = { ...userData, profile_image: imageUrl };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            
+            alert('Photo de profil enregistrée avec succès !');
+          } else {
+            console.log('Aucune URL d\'image trouvée dans la réponse'); // Debug
+            console.log('Champs disponibles:', Object.keys(updatedProfile)); // Debug
+            alert('Photo uploadée mais URL non reçue');
+          }
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur lors de la sauvegarde de la photo: ${errorData.error || 'Erreur inconnue'}`);
+        // Revenir à l'image précédente en cas d'erreur
+        setUserProfileImage(userProfileImage);
       }
     } catch (error) {
       console.error("Erreur lors de l'upload:", error);
@@ -80,14 +171,43 @@ const Profile = ({
     setShowAvatarMenu(false);
     try {
       setIsLoading(true);
-      // Ici il faut implémenter la logique pour supprimer l'image sur le serveur      
-      // Pour l'instant, on met l'image par défaut
-      setUserProfileImage(defaultImage);
-      localStorage.setItem('userProfileImage', defaultImage);
       
-      const userData = JSON.parse(localStorage.getItem('user'));
-      const updatedUser = { ...userData, profile_image: defaultImage };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Vous devez être connecté pour supprimer votre photo de profil');
+        return;
+      }
+
+      // Envoyer une requête pour supprimer l'image (mettre à null)
+      const response = await fetch('http://localhost:8000/api/profile/detail/', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ profile_image: null })
+      });
+
+      if (response.ok) {
+        // Mettre l'image par défaut
+        setUserProfileImage(defaultImage);
+        // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+        if (user && user.id) {
+          const userSpecificImageKey = `userProfileImage_${user.id}`;
+          localStorage.setItem(userSpecificImageKey, defaultImage);
+        }
+        localStorage.setItem('userProfileImage', defaultImage);
+        
+        const userData = JSON.parse(localStorage.getItem('user'));
+        const updatedUser = { ...userData, profile_image: defaultImage };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        // Message de confirmation
+        alert('Photo de profil supprimée avec succès !');
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur lors de la suppression: ${errorData.error || 'Erreur inconnue'}`);
+      }
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
       alert("Erreur lors de la suppression de l'image de profil");
@@ -99,15 +219,41 @@ const Profile = ({
 const handleBioSave = async () => {
   setIsLoading(true);
   try {
-    const success = await updateUserBio(newBio);
-    if (success) {
-      const updatedUser = { ...user, bio: newBio };
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('Vous devez être connecté pour sauvegarder votre bio');
+      return;
+    }
+
+    const response = await fetch('http://localhost:8000/api/profile/detail/', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ bio: newBio })
+    });
+
+    if (response.ok) {
+      const updatedProfile = await response.json();
+      
+      // Mettre à jour l'utilisateur dans localStorage
+      const userData = JSON.parse(localStorage.getItem('user'));
+      const updatedUser = { ...userData, bio: updatedProfile.bio };
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
+      
+      // Fermer le mode édition
       setEditBio(false);
+      
+      // Message de confirmation
+      alert('Bio enregistrée avec succès !');
+    } else {
+      const errorData = await response.json();
+      alert(`Erreur lors de la sauvegarde: ${errorData.error || 'Erreur inconnue'}`);
     }
   } catch (error) {
-    console.error("Erreur:", error);
+    console.error("Erreur lors de la sauvegarde de la bio:", error);
+    alert("Erreur lors de la sauvegarde de la bio");
   } finally {
     setIsLoading(false);
   }
@@ -147,6 +293,115 @@ const handleBioSave = async () => {
 
     loadProfileUser();
   }, [viewingUserId, user]);
+
+  // Charger le profil utilisateur depuis l'API au montage
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!isCurrentUser) return; // Seulement pour l'utilisateur connecté
+      
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+
+        const response = await fetch('http://localhost:8000/api/profile/detail/', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const profileData = await response.json();
+          console.log('Profil chargé depuis API:', profileData); // Debug
+          
+          // Mettre à jour la bio
+          if (profileData.bio !== undefined) {
+            setNewBio(profileData.bio || 'Une petite biographie ici...');
+          }
+          
+          // Mettre à jour l'image de profil si elle existe
+          if (profileData.profile_image_url) {
+            let imageUrl = profileData.profile_image_url;
+            console.log('Image trouvée dans API:', imageUrl); // Debug
+            
+            // Construire l'URL complète si nécessaire
+            if (imageUrl && !imageUrl.startsWith('http')) {
+              if (imageUrl.startsWith('/media/')) {
+                imageUrl = `http://localhost:8000${imageUrl}`;
+              } else if (imageUrl.startsWith('media/')) {
+                imageUrl = `http://localhost:8000/${imageUrl}`;
+              } else {
+                imageUrl = `http://localhost:8000/media/${imageUrl}`;
+              }
+            }
+            
+            console.log('URL finale construite au chargement:', imageUrl); // Debug
+            // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+            setUserProfileImage(imageUrl);
+            if (user && user.id) {
+              const userSpecificImageKey = `userProfileImage_${user.id}`;
+              localStorage.setItem(userSpecificImageKey, imageUrl);
+            }
+            localStorage.setItem('userProfileImage', imageUrl);
+          } else if (profileData.profile_image) {
+            // Fallback avec profile_image
+            let imageUrl = profileData.profile_image;
+            console.log('Fallback - profile_image au chargement:', imageUrl); // Debug
+            
+            if (imageUrl && !imageUrl.startsWith('http')) {
+              if (imageUrl.startsWith('/media/')) {
+                imageUrl = `http://localhost:8000${imageUrl}`;
+              } else if (imageUrl.startsWith('media/')) {
+                imageUrl = `http://localhost:8000/${imageUrl}`;
+              } else {
+                imageUrl = `http://localhost:8000/media/${imageUrl}`;
+              }
+            }
+            
+            console.log('URL finale fallback au chargement:', imageUrl); // Debug
+            // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+            setUserProfileImage(imageUrl);
+            if (user && user.id) {
+              const userSpecificImageKey = `userProfileImage_${user.id}`;
+              localStorage.setItem(userSpecificImageKey, imageUrl);
+            }
+            localStorage.setItem('userProfileImage', imageUrl);
+          } else {
+            console.log('Aucune image trouvée dans l\'API, utilisation de l\'image par défaut'); // Debug
+            // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+            setUserProfileImage(defaultImage);
+            if (user && user.id) {
+              const userSpecificImageKey = `userProfileImage_${user.id}`;
+              localStorage.setItem(userSpecificImageKey, defaultImage);
+            }
+            localStorage.setItem('userProfileImage', defaultImage);
+          }
+          
+          // Mettre à jour l'utilisateur dans le state
+          if (user) {
+            const updatedUser = { 
+              ...user, 
+              bio: profileData.bio,
+              profile_image: profileData.profile_image_url || profileData.profile_image 
+            };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          }
+          
+          // 🎯 Récupérer et stocker le score
+          if (profileData.score_total !== undefined) {
+            setUserScore(profileData.score_total);
+            console.log('🎯 Score chargé depuis API:', profileData.score_total);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement du profil:', error);
+        // En cas d'erreur, utiliser l'image par défaut
+        setUserProfileImage(defaultImage);
+        localStorage.setItem('userProfileImage', defaultImage);
+      }
+    };
+
+    loadUserProfile();
+  }, [isCurrentUser, user]);
 
   return (
     <div className="card profile">
@@ -245,6 +500,25 @@ const handleBioSave = async () => {
               <label className="form-label">Membre depuis</label>
               <div className="input profile-info-field">
                 {user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : '2023-01-01'}
+              </div>
+
+              {/* 🎯 Icône Score */}
+              <label className="form-label">
+                <span style={{ marginRight: '0.5rem' }}>🎯</span>
+                Score total
+              </label>
+              <div className="input profile-info-field score-field">
+                <span style={{ 
+                  fontSize: '1.2em', 
+                  fontWeight: 'bold', 
+                  color: '#1976d2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>🏆</span>
+                  {userScore} points
+                </span>
               </div>
             </div>
           {isCurrentUser && (

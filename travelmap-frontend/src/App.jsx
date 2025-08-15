@@ -9,6 +9,8 @@ import Dashboard from './Dashboard';
 import Lieu from './Lieu';
 import Navbar from './Navbar';
 import Activites from './Activites';
+import Favoris from './Favoris';
+import UserPublicProfile from './UserPublicProfile';
 import defaultImage from './assets/default_profile.png';
 
 const App = () => {
@@ -31,15 +33,25 @@ const App = () => {
     
     const token = localStorage.getItem('authToken');
     const userData = localStorage.getItem('user');
-    const savedProfileImage = localStorage.getItem('userProfileImage');
     
     if (token && userData) {
       setIsAuthenticated(true);
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
       
-     
-      setUserProfileImage(savedProfileImage || defaultImage);
+      // 🎯 Charger l'image de profil spécifique à l'utilisateur
+      const userSpecificImageKey = `userProfileImage_${parsedUser.id}`;
+      const userSpecificImage = localStorage.getItem(userSpecificImageKey);
+      setUserProfileImage(userSpecificImage || defaultImage);
+      
+      // 🎯 Nettoyer les anciennes clés localStorage pour éviter les conflits
+      const oldKeys = ['userProfileImage'];
+      oldKeys.forEach(key => {
+        if (localStorage.getItem(key)) {
+          console.log(`🧹 Nettoyage de l'ancienne clé: ${key}`);
+          localStorage.removeItem(key);
+        }
+      });
     }
   }, []);
 
@@ -54,7 +66,18 @@ const App = () => {
   const handleLogin = (token) => {
     const userData = localStorage.getItem('user');
     if (userData) {
-      setUser(JSON.parse(userData));
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      
+      // 🎯 Charger l'image de profil spécifique à l'utilisateur connecté
+      const userSpecificImageKey = `userProfileImage_${parsedUser.id}`;
+      const userSpecificImage = localStorage.getItem(userSpecificImageKey);
+      setUserProfileImage(userSpecificImage || defaultImage);
+      
+      // 🎯 Charger silencieusement l'image depuis l'API si nécessaire
+      setTimeout(() => {
+        loadUserProfileImageSilently();
+      }, 100);
     }
     setIsAuthenticated(true);
     setCurrentPage('Index');
@@ -64,6 +87,8 @@ const App = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    // 🎯 Nettoyer l'image de profil et remettre l'image par défaut
+    setUserProfileImage(defaultImage);
     setIsAuthenticated(false);
     setUser(null);
     setCurrentPage('Index');
@@ -74,6 +99,18 @@ const App = () => {
     setLieuId(lieuId);
     setLieuData(lieuData);
     setCurrentPage('Lieu');
+  };
+
+  // Fonction pour naviguer vers le profil d'un autre utilisateur
+  const navigateToUserProfile = (userId) => {
+    setViewingUserId(userId);
+    setCurrentPage('UserPublicProfile');
+  };
+
+  // Fonction pour revenir en arrière depuis un profil public
+  const navigateBackFromUserProfile = () => {
+    setViewingUserId(null);
+    setCurrentPage('Index');
   };
 
   // Fonction pour retourner à l'accueil
@@ -98,28 +135,212 @@ const loadUserProfile = async () => {
     const data = await response.json();
     const userData = JSON.parse(localStorage.getItem('user'));
     
-    // Mettre à jour les données utilisateur avec les nouvelles infos
-    const updatedUser = {
-      ...userData,
-      bio: data.bio || userData.bio,
-      profile_image: data.profile_image || userData.profile_image
-    };
-    
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    
-    if (data.profile_image) {
-      setUserProfileImage(data.profile_image);
-      localStorage.setItem('userProfileImage', data.profile_image);
-    } else {
-      setUserProfileImage(defaultImage);
-      localStorage.setItem('userProfileImage', defaultImage);
+    if (userData) {
+      const updatedUser = { 
+        ...userData, 
+        profile_image: data.profile_image 
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
     }
   } catch (error) {
-    console.error('Error loading profile:', error);
-    // Vous pourriez vouloir déconnecter l'utilisateur ici si le token est invalide
-    if (error.message.includes('401')) {
-      handleLogout();
+    console.error("Error loading user profile:", error);
+  }
+};
+
+// Nouvelle fonction pour charger l'image de profil depuis l'API
+const loadUserProfileImage = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    const response = await fetch('http://localhost:8000/api/profile/detail/', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Réponse API profil:', data); // Debug
+      
+      // Mettre à jour l'image de profil avec l'URL du serveur
+      if (data.profile_image_url) {
+          // Construire l'URL complète si nécessaire
+          let imageUrl = data.profile_image_url;
+          console.log('URL reçue:', imageUrl); // Debug
+          
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            // Si c'est une URL relative, construire l'URL complète
+            if (imageUrl.startsWith('/media/')) {
+              imageUrl = `http://localhost:8000${imageUrl}`;
+            } else if (imageUrl.startsWith('media/')) {
+              imageUrl = `http://localhost:8000/${imageUrl}`;
+            } else {
+              imageUrl = `http://localhost:8000/media/${imageUrl}`;
+            }
+          }
+          
+          console.log('URL finale construite:', imageUrl); // Debug
+          
+          // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+          setUserProfileImage(imageUrl);
+          if (user && user.id) {
+            const userSpecificImageKey = `userProfileImage_${user.id}`;
+            localStorage.setItem(userSpecificImageKey, imageUrl);
+          }
+          
+          // Mettre à jour l'utilisateur dans le state
+          const userData = JSON.parse(localStorage.getItem('user'));
+          const updatedUser = { ...userData, profile_image: imageUrl };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+          // Message de confirmation
+          alert('Photo de profil enregistrée avec succès !');
+        } else if (data.profile_image) {
+          // Fallback avec profile_image
+          let imageUrl = data.profile_image;
+          console.log('Fallback - profile_image:', imageUrl); // Debug
+          
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            if (imageUrl.startsWith('/media/')) {
+              imageUrl = `http://localhost:8000${imageUrl}`;
+            } else if (imageUrl.startsWith('media/')) {
+              imageUrl = `http://localhost:8000/${imageUrl}`;
+            } else {
+              imageUrl = `http://localhost:8000/media/${imageUrl}`;
+            }
+          }
+          
+          console.log('URL finale fallback:', imageUrl); // Debug
+          
+          // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+          setUserProfileImage(imageUrl);
+          if (user && user.id) {
+            const userSpecificImageKey = `userProfileImage_${user.id}`;
+            localStorage.setItem(userSpecificImageKey, imageUrl);
+          }
+          
+          const userData = JSON.parse(localStorage.getItem('user'));
+          const updatedUser = { ...userData, profile_image: imageUrl };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+          alert('Photo de profil enregistrée avec succès !');
+        } else {
+          console.log('Aucune URL d\'image trouvée dans la réponse'); // Debug
+          console.log('Champs disponibles:', Object.keys(data)); // Debug
+          alert('Photo uploadée mais URL non reçue');
+        }
+    } else {
+      const errorData = await response.json();
+      alert(`Erreur lors de la sauvegarde de la photo: ${errorData.error || 'Erreur inconnue'}`);
+      // Revenir à l'image précédente en cas d'erreur
+      setUserProfileImage(userProfileImage);
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'upload:", error);
+    alert("Erreur lors de la mise à jour de l'image de profil");
+    setUserProfileImage(userProfileImage); // Revenir à l'image précédente
+  }
+};
+
+// 🎯 Nouvelle fonction pour charger silencieusement l'image de profil (sans messages)
+const loadUserProfileImageSilently = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    const response = await fetch('http://localhost:8000/api/profile/detail/', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('🎯 Chargement silencieux du profil:', data); // Debug
+      
+      // Mettre à jour l'image de profil avec l'URL du serveur
+      if (data.profile_image_url) {
+          // Construire l'URL complète si nécessaire
+          let imageUrl = data.profile_image_url;
+          
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            if (imageUrl.startsWith('/media/')) {
+              imageUrl = `http://localhost:8000${imageUrl}`;
+            } else if (imageUrl.startsWith('media/')) {
+              imageUrl = `http://localhost:8000/${imageUrl}`;
+            } else {
+              imageUrl = `http://localhost:8000/media/${imageUrl}`;
+            }
+          }
+          
+          console.log('🎯 Image de profil chargée silencieusement:', imageUrl); // Debug
+          
+          // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+          setUserProfileImage(imageUrl);
+          if (user && user.id) {
+            const userSpecificImageKey = `userProfileImage_${user.id}`;
+            localStorage.setItem(userSpecificImageKey, imageUrl);
+          }
+          
+          // Mettre à jour l'utilisateur dans le state
+          const userData = JSON.parse(localStorage.getItem('user'));
+          const updatedUser = { ...userData, profile_image: imageUrl };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+        } else if (data.profile_image) {
+          // Fallback avec profile_image
+          let imageUrl = data.profile_image;
+          
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            if (imageUrl.startsWith('/media/')) {
+              imageUrl = `http://localhost:8000${imageUrl}`;
+            } else if (imageUrl.startsWith('media/')) {
+              imageUrl = `http://localhost:8000/${imageUrl}`;
+            } else {
+              imageUrl = `http://localhost:8000/media/${imageUrl}`;
+            }
+          }
+          
+          console.log('🎯 Image de profil chargée silencieusement (fallback):', imageUrl); // Debug
+          
+          // 🎯 Mettre à jour l'image de profil spécifique à l'utilisateur
+          setUserProfileImage(imageUrl);
+          if (user && user.id) {
+            const userSpecificImageKey = `userProfileImage_${user.id}`;
+            localStorage.setItem(userSpecificImageKey, imageUrl);
+          }
+          
+          const userData = JSON.parse(localStorage.getItem('user'));
+          const updatedUser = { ...userData, profile_image: imageUrl };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+        } else {
+          console.log('🎯 Aucune image trouvée, utilisation de l\'image par défaut'); // Debug
+          // Utiliser l'image par défaut sans afficher d'erreur
+          setUserProfileImage(defaultImage);
+          if (user && user.id) {
+            const userSpecificImageKey = `userProfileImage_${user.id}`;
+            localStorage.setItem(userSpecificImageKey, defaultImage);
+          }
+        }
+    } else {
+      console.log('🎯 Erreur API lors du chargement silencieux, utilisation de l\'image par défaut'); // Debug
+      // En cas d'erreur, utiliser l'image par défaut sans afficher d'alerte
+      setUserProfileImage(defaultImage);
+      if (user && user.id) {
+        const userSpecificImageKey = `userProfileImage_${user.id}`;
+        localStorage.setItem(userSpecificImageKey, defaultImage);
+      }
+    }
+  } catch (error) {
+    console.error("🎯 Erreur lors du chargement silencieux de l'image de profil:", error);
+    // En cas d'erreur, utiliser l'image par défaut sans afficher d'alerte
+    setUserProfileImage(defaultImage);
+    if (user && user.id) {
+      const userSpecificImageKey = `userProfileImage_${user.id}`;
+      localStorage.setItem(userSpecificImageKey, defaultImage);
     }
   }
 };
@@ -181,6 +402,7 @@ const updateUserBio = async (newBio) => {
   useEffect(() => {
   if (isAuthenticated) {
     loadUserProfile();
+    loadUserProfileImageSilently(); // 🎯 Charger l'image de profil silencieusement au démarrage
   }
 }, [isAuthenticated]);
 
@@ -215,6 +437,17 @@ const updateUserBio = async (newBio) => {
       setViewingUserId={setViewingUserId}/>;
       case 'Activites': 
         return <Activites />;
+      case 'Favoris':
+        return <Favoris 
+          onNavigateBack={() => setCurrentPage('Index')}
+          setCurrentPage={setCurrentPage}
+          onNavigateToLieu={navigateToLieu}
+        />;
+      case 'UserPublicProfile':
+        return <UserPublicProfile 
+          userId={viewingUserId} 
+          onNavigateBack={navigateBackFromUserProfile}
+        />;
       default: 
         return <Index onNavigateToLieu={navigateToLieu} />;
     }

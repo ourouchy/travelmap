@@ -15,9 +15,9 @@ from .serializers import (
     VoyageSerializer, VoyageCreateSerializer,
     FavoriSerializer, FavoriCreateSerializer, UserStatsSerializer,
     VoyageCreateWithMediaSerializer, ActiviteSerializer, ActiviteListSerializer,
-    NoteActiviteSerializer, ActiviteCreateWithMediaSerializer
+    NoteActiviteSerializer, ActiviteCreateWithMediaSerializer, UserProfileSerializer, UserPublicProfileSerializer
 )
-from .models import Pays, Lieu, Voyage, Favori, MediaVoyage, Activite, NoteActivite, MediaActivite
+from .models import Pays, Lieu, Voyage, Favori, MediaVoyage, Activite, NoteActivite, MediaActivite, UserProfile
 
 def ping(request):
     return JsonResponse({"message": "pong"})
@@ -175,9 +175,56 @@ class UserProfileView(APIView):
         serializer = UserStatsSerializer(request.user)
         return Response(serializer.data)
 
+class UserProfileDetailView(APIView):
+    """Vue détaillée pour le profil utilisateur (bio, image de profil)"""
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    
+    def get(self, request):
+        """Récupère le profil de l'utilisateur connecté"""
+        try:
+            profile = UserProfile.objects.get(utilisateur=request.user)
+            serializer = UserProfileSerializer(profile)
+            return Response(serializer.data)
+        except UserProfile.DoesNotExist:
+            return Response({'error': 'Profil non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+    
+    def put(self, request):
+        """Met à jour le profil de l'utilisateur connecté"""
+        try:
+            profile = UserProfile.objects.get(utilisateur=request.user)
+            serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except UserProfile.DoesNotExist:
+            return Response({'error': 'Profil non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+    
+    def patch(self, request):
+        """Met à jour partiellement le profil (pour la bio)"""
+        return self.put(request)
+
+class UserPublicProfileView(APIView):
+    """Vue pour le profil public d'un utilisateur"""
+    permission_classes = [AllowAny]
+    authentication_classes = [JWTAuthentication]
+    
+    def get(self, request, user_id):
+        """Récupère le profil public d'un utilisateur spécifique"""
+        try:
+            user_profile = UserProfile.objects.get(utilisateur__id=user_id)
+            serializer = UserPublicProfileSerializer(user_profile)
+            return Response(serializer.data)
+        except UserProfile.DoesNotExist:
+            return Response({'error': 'Profil non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+
 class LieuDetailView(APIView):
     """Vue détaillée pour un lieu avec ses voyages et favoris"""
     permission_classes = [AllowAny]
+    authentication_classes = [JWTAuthentication]
     
     def get(self, request, lieu_id):
         """Récupère les détails d'un lieu"""
@@ -190,6 +237,9 @@ class LieuDetailView(APIView):
         is_favori = False
         if request.user.is_authenticated:
             is_favori = Favori.objects.filter(utilisateur=request.user, lieu=lieu).exists()
+            print(f"🔍 DEBUG LieuDetailView: Utilisateur {request.user.username}, lieu {lieu.nom_ville}, is_favori: {is_favori}")
+        else:
+            print(f"🔍 DEBUG LieuDetailView: Utilisateur non authentifié")
         
         # Récupérer TOUS les voyages pour ce lieu (pas seulement ceux de l'utilisateur connecté)
         all_voyages = Voyage.objects.filter(lieu=lieu)

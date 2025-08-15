@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Map from './components/Map';
 
-const VoyageDetail = ({ voyageId, onNavigateBack }) => {
+const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPage }) => {
   const [voyage, setVoyage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -150,7 +150,23 @@ const VoyageDetail = ({ voyageId, onNavigateBack }) => {
             textShadow: '1px 1px 2px rgba(0,0,0,0.7)',
             opacity: 0.9
           }}>
-            par {voyage.utilisateur.username}
+            par{' '}
+            <span 
+              style={{ 
+                color: '#007bff',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+              onClick={() => {
+                if (voyage.utilisateur?.id) {
+                  setViewingUserId(voyage.utilisateur.id);
+                  setCurrentPage('UserPublicProfile');
+                }
+              }}
+              title="Cliquer pour voir le profil"
+            >
+              {voyage.utilisateur.username}
+            </span>
           </p>
           {voyage.note && (
             <div style={{ 

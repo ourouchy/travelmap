@@ -642,6 +642,37 @@ button:active {
   display: flex;
 }
 
+/* 🎯 Styles spécifiques pour le champ score */
+.score-field {
+  background: linear-gradient(135deg, var(--card-bg) 0%, rgba(25, 118, 210, 0.1) 100%);
+  border: 2px solid rgba(25, 118, 210, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.score-field::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(25, 118, 210, 0.1) 50%, transparent 70%);
+  animation: score-shine 3s ease-in-out infinite;
+}
+
+@keyframes score-shine {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+.score-field:hover {
+  border-color: rgba(25, 118, 210, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(25, 118, 210, 0.2);
+  transition: all 0.3s ease;
+}
+
 
 .visually-hidden {
   position: absolute;
@@ -1478,4 +1509,80 @@ button:active {
 
 .SVG{
   color: var(--text-color);
+}
+
+/* ========== Styles pour la carte mondiale ========== */
+
+.world-map-container {
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.map-legend {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  margin-top: 20px;
+  padding: 15px;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid;
+}
+
+.legend-color.visited {
+  background-color: #ef4444;
+  border-color: #dc2626;
+}
+
+.legend-color.not-visited {
+  background-color: #6b7280;
+  border-color: #4b5563;
+}
+
+/* Styles pour les sections de profil */
+.profile-section {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.profile-section h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--text-color);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Responsive pour la carte mondiale */
+@media (max-width: 768px) {
+  .map-legend {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .world-map-container {
+    margin: 15px 0;
+  }
 }

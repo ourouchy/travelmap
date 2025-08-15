@@ -461,6 +461,64 @@ http://localhost:8000/api/
 }
 ```
 
+### Profil détaillé de l'utilisateur connecté
+- **URL** : `GET /api/profile/detail/`
+- **Permissions** : Authentifié
+- **Headers** : `Authorization: Bearer <token>`
+- **Réponse** (200) :
+```json
+{
+    "id": 1,
+    "username": "user@example.com",
+    "email": "user@example.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    "bio": "Voyageur passionné",
+    "profile_image": "/media/profile_images/photo.jpg",
+    "profile_image_url": "http://localhost:8000/media/profile_images/photo.jpg",
+    "date_joined": "2024-01-15T10:30:00Z",
+    "date_creation": "2024-01-15T10:30:00Z",
+    "date_modification": "2024-01-15T10:30:00Z",
+    "score_total": 15
+}
+```
+
+### Profil public d'un autre utilisateur
+- **URL** : `GET /api/users/{user_id}/profile/`
+- **Permissions** : Aucune (endpoint public)
+- **Headers** : Aucun (ou optionnel pour l'authentification JWT)
+- **Réponse** (200) :
+```json
+{
+    "id": 1,
+    "username": "john.doe",
+    "first_name": "John",
+    "last_name": "Doe",
+    "bio": "Voyageur passionné",
+    "profile_image_url": "http://localhost:8000/media/profile_images/photo.jpg",
+    "date_joined": "2024-01-15T10:30:00Z",
+    "score_total": 15,
+    "nombre_voyages": 8,
+    "nombre_activites_creees": 3,
+    "pays_visites": [
+        {
+            "code_iso": "FRA",
+            "nom": "France"
+        },
+        {
+            "code_iso": "ESP",
+            "nom": "Espagne"
+        }
+    ]
+}
+```
+- **Réponse erreur** (404) :
+```json
+{
+    "error": "Profil non trouvé"
+}
+```
+
 ## Recherche Globale
 
 ### Recherche dans lieux et pays

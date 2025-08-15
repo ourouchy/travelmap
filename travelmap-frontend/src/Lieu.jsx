@@ -19,6 +19,10 @@ const Lieu = ({ lieuId, lieuData, onNavigateBack, setViewingUserId, setCurrentPa
   const [displayedVoyagesCount, setDisplayedVoyagesCount] = useState(3);
   const [displayedActivitesCount, setDisplayedActivitesCount] = useState(3);
   
+  // Nouveau state pour les favoris
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  
   // États pour le formulaire de voyage
   const [voyageFormData, setVoyageFormData] = useState({
     lieu_id: '',
@@ -52,11 +56,22 @@ const Lieu = ({ lieuId, lieuData, onNavigateBack, setViewingUserId, setCurrentPa
       const token = localStorage.getItem('authToken');
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       
-      const response = await fetch(`http://localhost:8000/api/lieux/${lieuId}/detail/`);
+      // Préparer les headers avec le token si disponible
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`http://localhost:8000/api/lieux/${lieuId}/detail/`, {
+        headers: headers
+      });
       
         if (response.ok) {
           const data = await response.json();
           setLieuDetails(data);
+          
+          // Synchroniser l'état des favoris avec la réponse de l'API
+          setIsFavorite(data.is_favori === true);
 
         // Vérifier si l'utilisateur a déjà un voyage à ce lieu
         if (token && user.id) {
@@ -404,12 +419,99 @@ const ArrowUpSVG = () => (
 const ArrowDownSVG = () => (
 <svg className="SVG" width="30" height="30" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd"><path fill="currentColor" stroke="currentColor" strokeWidth="1.5" d="M23.245 4l-11.245 14.374-11.219-14.374-.781.619 12 15.381 12-15.391-.755-.609z"/></svg>);
 
+  // Nouvelles fonctions pour la gestion des favoris
+  const handleToggleFavorite = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setError('Connectez-vous pour gérer vos favoris');
+      return;
+    }
+
+    try {
+      setIsFavoriteLoading(true);
+      if (isFavorite) {
+        await removeFavorite();
+      } else {
+        await addFavorite();
+      }
+    } catch (error) {
+      setError('Erreur lors de la gestion du favori');
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
+
+  const addFavorite = async () => {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch('http://localhost:8000/api/favoris/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ lieu_id: lieuId })
+    });
+
+    if (response.ok) {
+      setIsFavorite(true);
+      // Mettre à jour les détails du lieu pour refléter le changement
+      const detailsResponse = await fetch(`http://localhost:8000/api/lieux/${lieuId}/detail/`);
+      if (detailsResponse.ok) {
+        const updatedDetails = await detailsResponse.json();
+        setLieuDetails(updatedDetails);
+      }
+    } else {
+      throw new Error('Erreur lors de l\'ajout aux favoris');
+    }
+  };
+
+  const removeFavorite = async () => {
+    const token = localStorage.getItem('authToken');
+    
+    // D'abord récupérer l'ID du favori
+    const favorisResponse = await fetch('http://localhost:8000/api/favoris/', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (favorisResponse.ok) {
+      const favoris = await favorisResponse.json();
+      const favori = favoris.find(f => f.lieu.id === lieuId);
+      
+      if (favori) {
+        const deleteResponse = await fetch(`http://localhost:8000/api/favoris/${favori.id}/`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (deleteResponse.ok) {
+          setIsFavorite(false);
+          // Mettre à jour les détails du lieu pour refléter le changement
+          const detailsResponse = await fetch(`http://localhost:8000/api/lieux/${lieuId}/detail/`);
+          if (detailsResponse.ok) {
+            const updatedDetails = await detailsResponse.json();
+            setLieuDetails(updatedDetails);
+          }
+        } else {
+          throw new Error('Erreur lors de la suppression du favori');
+        }
+      }
+    } else {
+      throw new Error('Erreur lors de la récupération des favoris');
+    }
+  };
+
   // Vues conditionnelles
   if (selectedVoyageId) {
     return (
       <VoyageDetail 
         voyageId={selectedVoyageId} 
         onNavigateBack={handleBackFromVoyage}
+        setViewingUserId={setViewingUserId}
+        setCurrentPage={setCurrentPage}
       />
     );
   }
@@ -419,6 +521,8 @@ const ArrowDownSVG = () => (
       <ActiviteDetail 
         activiteId={selectedActiviteId} 
         onNavigateBack={handleBackFromActivite}
+        setViewingUserId={setViewingUserId}
+        setCurrentPage={setCurrentPage}
       />
     );
   }
@@ -463,15 +567,18 @@ const ArrowDownSVG = () => (
           ➕ Ajouter une activité
         </button>
         {lieuDetails.is_favori !== undefined && (
-          <button className="fav">
-            {lieuDetails.is_favori ? (
-              <span>
-                ❤️
-              </span>
+          <button 
+            className={`fav ${isFavoriteLoading ? 'loading' : ''}`}
+            onClick={handleToggleFavorite}
+            disabled={isFavoriteLoading}
+            title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          >
+            {isFavoriteLoading ? (
+              <span>⏳</span>
+            ) : isFavorite ? (
+              <span>❤️</span>
             ) : (
-              <span>
-                🤍
-              </span>
+              <span>🤍</span>
             )}
           </button>
         )}
@@ -977,13 +1084,15 @@ const ArrowDownSVG = () => (
             >
                   <div className="dashboard-header">
                     <div 
-                      className="dashboard-title"
+                      className="dashboard-title clickable-username"
                       onClick={() => {
                         if (voyage.utilisateur?.id) {
                           setViewingUserId(voyage.utilisateur.id);
-                          setCurrentPage('Profile');
+                          setCurrentPage('UserPublicProfile');
                         }
                       }}
+                      style={{ cursor: 'pointer', textDecoration: 'underline', color: '#007bff' }}
+                      title="Cliquer pour voir le profil"
                     >
                       {voyage.utilisateur?.username || 'Utilisateur'}
                     </div>
@@ -1142,7 +1251,19 @@ const ArrowDownSVG = () => (
                       )}
                   </div>
                   <div className="activity-info">
-                    <span>👤 Par {activite.cree_par?.username || 'Utilisateur'}</span>
+                    <span 
+                      className="clickable-username"
+                      onClick={() => {
+                        if (activite.cree_par?.id) {
+                          setViewingUserId(activite.cree_par.id);
+                          setCurrentPage('UserPublicProfile');
+                        }
+                      }}
+                      style={{ cursor: 'pointer', textDecoration: 'underline', color: '#007bff' }}
+                      title="Cliquer pour voir le profil"
+                    >
+                      👤 Par {activite.cree_par?.username || 'Utilisateur'}
+                    </span>
                     <span>📅 {new Date(activite.date_creation).toLocaleDateString('fr-FR')}</span>
                   </div>
                 </div>

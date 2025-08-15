@@ -1,13 +1,97 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import Pays, Lieu, Voyage, Favori, MediaVoyage, Activite, NoteActivite, MediaActivite
+from .models import Pays, Lieu, Voyage, Favori, MediaVoyage, Activite, NoteActivite, MediaActivite, UserProfile
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name')
         read_only_fields = ('id',)
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer pour le profil utilisateur"""
+    username = serializers.CharField(source='utilisateur.username', read_only=True)
+    email = serializers.CharField(source='utilisateur.email', read_only=True)
+    first_name = serializers.CharField(source='utilisateur.first_name', read_only=True)
+    last_name = serializers.CharField(source='utilisateur.last_name', read_only=True)
+    date_joined = serializers.DateTimeField(source='utilisateur.date_joined', read_only=True)
+    profile_image_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserProfile
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'bio', 'profile_image', 'profile_image_url', 'date_joined', 'date_creation', 'date_modification', 'score_total')
+        read_only_fields = ('id', 'username', 'email', 'first_name', 'last_name', 'date_joined', 'date_creation', 'date_modification', 'score_total')
+    
+    def get_profile_image_url(self, obj):
+        """Retourne l'URL de l'image de profil"""
+        return obj.get_profile_image_url()
+    
+    def to_representation(self, instance):
+        """Personnalise la représentation pour inclure les champs User"""
+        data = super().to_representation(instance)
+        # Ajouter les champs du modèle User
+        data['username'] = instance.utilisateur.username
+        data['email'] = instance.utilisateur.email
+        data['first_name'] = instance.utilisateur.first_name
+        data['last_name'] = instance.utilisateur.last_name
+        data['date_joined'] = instance.utilisateur.date_joined
+        return data
+
+class UserPublicProfileSerializer(serializers.ModelSerializer):
+    """Serializer pour le profil public des autres utilisateurs"""
+    username = serializers.CharField(source='utilisateur.username', read_only=True)
+    first_name = serializers.CharField(source='utilisateur.first_name', read_only=True)
+    last_name = serializers.CharField(source='utilisateur.last_name', read_only=True)
+    date_joined = serializers.DateTimeField(source='utilisateur.date_joined', read_only=True)
+    profile_image_url = serializers.SerializerMethodField()
+    
+    # Statistiques publiques
+    nombre_voyages = serializers.SerializerMethodField()
+    nombre_activites_creees = serializers.SerializerMethodField()
+    pays_visites = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserProfile
+        fields = (
+            'id', 'username', 'first_name', 'last_name', 'bio', 
+            'profile_image_url', 'date_joined', 'score_total',
+            'nombre_voyages', 'nombre_activites_creees', 'pays_visites'
+        )
+        read_only_fields = ('id', 'username', 'first_name', 'last_name', 'date_joined', 'score_total')
+    
+    def get_profile_image_url(self, obj):
+        """Retourne l'URL de l'image de profil"""
+        return obj.get_profile_image_url()
+    
+    def get_nombre_voyages(self, obj):
+        """Retourne le nombre total de voyages de l'utilisateur"""
+        return obj.utilisateur.voyages.count()
+    
+    def get_nombre_activites_creees(self, obj):
+        """Retourne le nombre d'activités créées par l'utilisateur"""
+        return obj.utilisateur.activites_creees.count()
+    
+    def get_pays_visites(self, obj):
+        """Retourne la liste des pays visités par l'utilisateur"""
+        pays_visites = obj.utilisateur.get_pays_visites()
+        return [
+            {
+                'code_iso': pays.code_iso,
+                'nom': pays.nom
+            }
+            for pays in pays_visites
+        ]
+    
+    def to_representation(self, instance):
+        """Personnalise la représentation pour inclure les champs User"""
+        data = super().to_representation(instance)
+        # Ajouter les champs du modèle User
+        data['username'] = instance.utilisateur.username
+        data['first_name'] = instance.utilisateur.first_name
+        data['last_name'] = instance.utilisateur.last_name
+        data['date_joined'] = instance.utilisateur.date_joined
+        return data
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -260,6 +344,18 @@ class VoyageCreateWithMediaSerializer(serializers.ModelSerializer):
                     traceback.print_exc()
         else:
             print("ℹ️  Aucun média à traiter")
+        
+        # 🎯 SYSTÈME DE SCORE : +3 points pour création de voyage
+        try:
+            user = self.context['request'].user
+            if hasattr(user, 'profile'):
+                user.profile.score_total += 3
+                user.profile.save()
+                print(f"🎯 Score +3 points ajouté pour {user.username} (création voyage). Nouveau score: {user.profile.score_total}")
+            else:
+                print(f"⚠️  Profil utilisateur non trouvé pour {user.username}")
+        except Exception as e:
+            print(f"❌ Erreur lors de l'ajout des points: {e}")
         
         return voyage
 
@@ -531,6 +627,18 @@ class ActiviteCreateWithMediaSerializer(serializers.ModelSerializer):
         else:
             print("ℹ️  Aucun média à traiter")
         
+        # 🎯 SYSTÈME DE SCORE : +2 points pour création d'activité
+        try:
+            user = self.context['request'].user
+            if hasattr(user, 'profile'):
+                user.profile.score_total += 2
+                user.profile.save()
+                print(f"🎯 Score +2 points ajouté pour {user.username} (création activité). Nouveau score: {user.profile.score_total}")
+            else:
+                print(f"⚠️  Profil utilisateur non trouvé pour {user.username}")
+        except Exception as e:
+            print(f"❌ Erreur lors de l'ajout des points: {e}")
+        
         return activite
 
 class NoteActiviteSerializer(serializers.ModelSerializer):
@@ -565,6 +673,19 @@ class NoteActiviteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Crée une note en assignant l'utilisateur connecté"""
         validated_data['utilisateur'] = self.context['request'].user
+        
+        # 🎯 SYSTÈME DE SCORE : +1 point pour notation d'activité
+        try:
+            user = self.context['request'].user
+            if hasattr(user, 'profile'):
+                user.profile.score_total += 1
+                user.profile.save()
+                print(f"🎯 Score +1 point ajouté pour {user.username} (notation activité). Nouveau score: {user.profile.score_total}")
+            else:
+                print(f"⚠️  Profil utilisateur non trouvé pour {user.username}")
+        except Exception as e:
+            print(f"❌ Erreur lors de l'ajout des points: {e}")
+        
         return super().create(validated_data)
 
 class ActiviteListSerializer(serializers.ModelSerializer):

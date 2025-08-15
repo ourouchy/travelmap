@@ -20,8 +20,12 @@ urlpatterns = [
     # Endpoints des ViewSets
     path('', include(router.urls)),
     
-    # Endpoints personnalisés
+    # Endpoints personnalisés - URL plus spécifique en premier
+    path('profile/detail/', views.UserProfileDetailView.as_view(), name='user-profile-detail'),
     path('profile/', views.UserProfileView.as_view(), name='user-profile'),
     path('lieux/<uuid:lieu_id>/detail/', views.LieuDetailView.as_view(), name='lieu-detail'),
     path('search/', views.SearchView.as_view(), name='search'),
+    
+    # Nouvel endpoint pour le profil public des autres utilisateurs
+    path('users/<int:user_id>/profile/', views.UserPublicProfileView.as_view(), name='user-public-profile'),
 ] 

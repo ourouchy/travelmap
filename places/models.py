@@ -283,7 +283,68 @@ def get_score_total(self):
         return voyages_notes.aggregate(models.Sum('note'))['note__sum'] or 0
     return 0
 
+class UserProfile(models.Model):
+    """User profile model - Extension du modèle User Django avec des champs personnalisés"""
+    utilisateur = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField(blank=True, help_text="Biographie de l'utilisateur")
+    profile_image = models.ImageField(
+        upload_to='profiles_images/',
+        null=True,
+        blank=True,
+        help_text="Image de profil de l'utilisateur"
+    )
+    score_total = models.PositiveIntegerField(default=0, help_text="Score total de l'utilisateur")  # NOUVEAU CHAMP
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Profil utilisateur"
+        verbose_name_plural = "Profils utilisateurs"
+        ordering = ['-date_modification']
+    
+    def __str__(self):
+        return f"Profil de {self.utilisateur.username}"
+    
+    def get_profile_image_url(self):
+        """Retourne l'URL de l'image de profil ou une image par défaut"""
+        if self.profile_image:
+            return self.profile_image.url
+        return None
+    
+    def has_profile_image(self):
+        """Vérifie si l'utilisateur a une image de profil"""
+        return bool(self.profile_image)
+    
+    def get_bio_display(self):
+        """Retourne la bio ou un message par défaut"""
+        return self.bio if self.bio else "Aucune biographie renseignée"
+
 # Ajout des méthodes au modèle User
 User.add_to_class('get_lieux_visites', get_lieux_visites)
 User.add_to_class('get_pays_visites', get_pays_visites)
 User.add_to_class('get_score_total', get_score_total)
+
+# Signaux pour créer/supprimer automatiquement le profil utilisateur
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Crée automatiquement un profil utilisateur quand un nouvel utilisateur est créé"""
+    if created:
+        UserProfile.objects.create(utilisateur=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Sauvegarde automatiquement le profil utilisateur quand l'utilisateur est modifié"""
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
+
+@receiver(post_delete, sender=User)
+def delete_user_profile(sender, instance, **kwargs):
+    """Supprime automatiquement le profil utilisateur quand l'utilisateur est supprimé"""
+    try:
+        if hasattr(instance, 'profile'):
+            instance.profile.delete()
+    except UserProfile.DoesNotExist:
+        pass
