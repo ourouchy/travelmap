@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import Suggestions from './components/Suggestions';
 
 const Index = ({ onNavigateToLieu }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState({ lieux: [], pays: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [token, setToken] = useState(null);
+
+  // Récupérer le token au chargement
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    if (authToken) {
+      setToken(authToken);
+    }
+  }, []);
 
   // Fonction pour rechercher avec notre API backend
   const searchPlaces = async (query) => {
@@ -212,6 +222,18 @@ const Index = ({ onNavigateToLieu }) => {
           </div>
         )}
       </div>
+      
+      {/* NOUVEAU : Section Suggestions */}
+      {token && (
+        <Suggestions 
+          token={token} 
+          onRefresh={() => {
+            // Recharger les suggestions si nécessaire
+            console.log('Suggestions actualisées');
+          }}
+          onNavigateToLieu={onNavigateToLieu}
+        />
+      )}
     </div>
   );
 };

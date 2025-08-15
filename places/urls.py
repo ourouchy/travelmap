@@ -26,6 +26,9 @@ urlpatterns = [
     path('lieux/<uuid:lieu_id>/detail/', views.LieuDetailView.as_view(), name='lieu-detail'),
     path('search/', views.SearchView.as_view(), name='search'),
     
+    # Endpoint pour les suggestions personnalisées
+    path('suggestions/', views.SuggestionsView.as_view(), name='suggestions'),
+    
     # Nouvel endpoint pour le profil public des autres utilisateurs
     path('users/<int:user_id>/profile/', views.UserPublicProfileView.as_view(), name='user-public-profile'),
 ] 

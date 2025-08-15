@@ -382,3 +382,106 @@ class SearchView(APIView):
             'lieux': LieuListSerializer(lieux, many=True).data,
             'pays': PaysSerializer(pays, many=True).data
         })
+
+class SuggestionsView(APIView):
+    """Vue pour générer des suggestions personnalisées basées sur les favoris de l'utilisateur"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Génère des suggestions personnalisées pour l'utilisateur connecté"""
+        user = request.user
+        suggestions = []
+        
+        # Étape 1: Même pays que les favoris
+        favoris = user.favoris.all()
+        for favori in favoris:
+            pays_favori = favori.lieu.pays
+            lieux_meme_pays = Lieu.objects.filter(
+                pays=pays_favori
+            ).exclude(
+                voyages__utilisateur=user  # Pas déjà visités
+            ).distinct()[:3]
+            suggestions.extend(lieux_meme_pays)
+        
+        # Étape 2: Même continent que les favoris
+        for favori in favoris:
+            pays_favori = favori.lieu.pays
+            continent_favori = self.get_continent(pays_favori.code_iso)
+            
+            lieux_meme_continent = Lieu.objects.filter(
+                pays__code_iso__in=self.get_pays_continent(continent_favori)
+            ).exclude(
+                voyages__utilisateur=user
+            ).exclude(
+                pays=pays_favori  # Pas du même pays
+            ).distinct()[:2]
+            suggestions.extend(lieux_meme_continent)
+        
+        # Étape 3: Lieux populaires comme fallback
+        if len(suggestions) < 6:
+            from django.db.models import Count
+            lieux_populaires = Lieu.objects.annotate(
+                nb_voyages=Count('voyages')
+            ).order_by('-nb_voyages')[:10]
+            
+            lieux_disponibles = [
+                lieu for lieu in lieux_populaires 
+                if lieu not in suggestions and 
+                not lieu.voyages.filter(utilisateur=user).exists()
+            ]
+            suggestions.extend(lieux_disponibles[:6-len(suggestions)])
+        
+        # Retourner max 6 suggestions uniques
+        suggestions_finales = list(set(suggestions))[:6]
+        
+        # Sérialiser les suggestions
+        data = LieuListSerializer(suggestions_finales, many=True).data
+        
+        return Response({
+            'suggestions': data,
+            'total': len(data),
+            'message': self.get_message_explicatif(user, favoris)
+        })
+    
+    def get_continent(self, code_pays):
+        """Mapping simple pays → continent"""
+        europe = ['FRA', 'DEU', 'ITA', 'ESP', 'GBR', 'NLD', 'BEL', 'CHE', 'AUT', 'POL', 'IRL', 'DNK', 'SWE', 'NOR', 'FIN']
+        asie = ['JPN', 'CHN', 'KOR', 'THA', 'VNM', 'IDN', 'MYS', 'SGP', 'PHL', 'IND', 'PAK', 'BGD', 'LKA']
+        amerique = ['USA', 'CAN', 'MEX', 'BRA', 'ARG', 'CHL', 'PER', 'COL', 'VE', 'EC', 'BO', 'PY', 'UY']
+        afrique = ['ZAF', 'EGY', 'MAR', 'TUN', 'KEN', 'GHA', 'NGA', 'ETH', 'UGA', 'TZA', 'ZWE', 'MWI']
+        oceanie = ['AUS', 'NZL', 'FJI', 'PNG', 'VUT', 'NCL', 'PYF']
+        
+        if code_pays in europe:
+            return 'europe'
+        elif code_pays in asie:
+            return 'asie'
+        elif code_pays in amerique:
+            return 'amerique'
+        elif code_pays in afrique:
+            return 'afrique'
+        elif code_pays in oceanie:
+            return 'oceanie'
+        else:
+            return 'autre'
+    
+    def get_pays_continent(self, continent):
+        """Retourne les codes pays d'un continent"""
+        mapping = {
+            'europe': ['FRA', 'DEU', 'ITA', 'ESP', 'GBR', 'NLD', 'BEL', 'CHE', 'AUT', 'POL', 'IRL', 'DNK', 'SWE', 'NOR', 'FIN'],
+            'asie': ['JPN', 'CHN', 'KOR', 'THA', 'VNM', 'IDN', 'MYS', 'SGP', 'PHL', 'IND', 'PAK', 'BGD', 'LKA'],
+            'amerique': ['USA', 'CAN', 'MEX', 'BRA', 'ARG', 'CHL', 'PER', 'COL', 'VE', 'EC', 'BO', 'PY', 'UY'],
+            'afrique': ['ZAF', 'EGY', 'MAR', 'TUN', 'KEN', 'GHA', 'NGA', 'ETH', 'UGA', 'TZA', 'ZWE', 'MWI'],
+            'oceanie': ['AUS', 'NZL', 'FJI', 'PNG', 'VUT', 'NCL', 'PYF']
+        }
+        return mapping.get(continent, [])
+    
+    def get_message_explicatif(self, user, favoris):
+        """Génère un message explicatif personnalisé"""
+        if not favoris.exists():
+            return "Découvrez des destinations populaires"
+        
+        pays_favoris = [f.lieu.pays.nom for f in favoris[:2]]
+        if len(pays_favoris) == 1:
+            return f"Basé sur vos favoris en {pays_favoris[0]}"
+        else:
+            return f"Basé sur vos favoris en {pays_favoris[0]} et {pays_favoris[1]}"
