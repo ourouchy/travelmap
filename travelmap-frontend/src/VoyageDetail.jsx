@@ -34,7 +34,7 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
 
   if (isLoading) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
+      <div className="voyage-detail-loading">
         <div>Chargement des détails du voyage...</div>
       </div>
     );
@@ -42,7 +42,7 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
 
   if (error) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center', color: 'red' }}>
+      <div className="voyage-detail-error">
         <div>{error}</div>
       </div>
     );
@@ -50,7 +50,7 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
 
   if (!voyage) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center', color: 'red' }}>
+      <div className="voyage-detail-error">
         <div>Voyage non trouvé</div>
       </div>
     );
@@ -78,43 +78,9 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
   };
 
   return (
-    <div style={{ padding: '0' }}>
-      {/* Bouton de retour */}
-      <div style={{ 
-        position: 'absolute', 
-        top: '20px', 
-        left: '20px', 
-        zIndex: 1000 
-      }}>
-        <button
-          onClick={onNavigateBack}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            color: '#333',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '1em',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            backdropFilter: 'blur(10px)'
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 1)'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'}
-        >
-          ← Retour
-        </button>
-      </div>
-
+    <div className="voyage-detail-root">
       {/* En-tête avec carte */}
-      <div style={{ 
-        position: 'relative',
-        height: '400px',
-        marginBottom: '30px'
-      }}>
+      <div className="voyage-detail-map-header">
         <Map
           latitude={voyage.lieu.latitude}
           longitude={voyage.lieu.longitude}
@@ -127,36 +93,14 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
         />
         
         {/* Overlay avec informations du voyage */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
-          color: 'white',
-          padding: '40px 20px 20px',
-          textAlign: 'center'
-        }}>
-          <h1 style={{ 
-            margin: '0 0 10px 0', 
-            fontSize: '2.5em',
-            textShadow: '2px 2px 4px rgba(0,0,0,0.7)'
-          }}>
+        <div className="voyage-detail-map-overlay">
+          <h1 className="voyage-detail-title">
             Voyage à {voyage.lieu.nom_ville}
           </h1>
-          <p style={{ 
-            fontSize: '1.2em', 
-            margin: '10px 0',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.7)',
-            opacity: 0.9
-          }}>
+          <p className="voyage-detail-author">
             par{' '}
             <span 
-              style={{ 
-                color: '#007bff',
-                cursor: 'pointer',
-                textDecoration: 'underline'
-              }}
+              className="voyage-detail-author-link"
               onClick={() => {
                 if (voyage.utilisateur?.id) {
                   setViewingUserId(voyage.utilisateur.id);
@@ -169,16 +113,7 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
             </span>
           </p>
           {voyage.note && (
-            <div style={{ 
-              backgroundColor: '#ffd700', 
-              color: '#333',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              fontSize: '1.1em',
-              fontWeight: 'bold',
-              display: 'inline-block',
-              marginTop: '10px'
-            }}>
+            <div className="voyage-detail-note">
               ⭐ {voyage.note}/5
             </div>
           )}
@@ -186,125 +121,80 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
       </div>
 
       {/* Contenu principal */}
-      <div style={{ padding: '0 20px' }}>
+      <div className="voyage-detail-content">
         {/* Informations du voyage */}
-        <div style={{ 
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '30px',
-          marginBottom: '30px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{ marginBottom: '20px', color: '#333' }}>Détails du voyage</h2>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+        <div className="voyage-detail-section">
+          <h2 className="voyage-detail-section-title">Détails du voyage</h2>
+          <div className="voyage-detail-dates-note">
             <div>
               <strong>Date de début :</strong> {formatDate(voyage.date_debut)}
             </div>
             <div>
               <strong>Date de fin :</strong> {voyage.date_fin ? formatDate(voyage.date_fin) : 'Non spécifiée'}
             </div>
+            <div>
+              <strong>Note :</strong> {voyage.note} ⭐
+            </div>
           </div>
-
           {voyage.commentaire && (
-            <div style={{ 
-              backgroundColor: '#f8f9fa',
-              padding: '20px',
-              borderRadius: '8px',
-              marginTop: '20px'
-            }}>
-              <h3 style={{ marginBottom: '15px', color: '#495057' }}>Commentaire</h3>
-              <p style={{ 
-                fontSize: '1.1em', 
-                lineHeight: '1.6',
-                color: '#495057',
-                margin: 0
-              }}>
+            <div className="voyage-detail-comment">
+              <h3>Commentaire</h3>
+              <p>
                 "{voyage.commentaire}"
               </p>
             </div>
           )}
+          
+          {/* Bouton de retour */}
+          <div className="voyage-detail-back-btn-container">
+            <button
+              className="voyage-detail-back-btn"
+              onClick={onNavigateBack}
+            >
+              ← Retour
+            </button>
+          </div>
         </div>
 
         {/* Médias */}
         {(images.length > 0 || videos.length > 0) && (
-          <div style={{ 
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '30px',
-            marginBottom: '30px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-          }}>
-            <h2 style={{ marginBottom: '20px', color: '#333' }}>Médias</h2>
-            
+          <div className="voyage-detail-section">
+            <h2 className="voyage-detail-section-title">Médias</h2>
             {/* Images */}
             {images.length > 0 && (
-              <div style={{ marginBottom: '30px' }}>
-                <h3 style={{ marginBottom: '15px', color: '#495057' }}>Photos ({images.length})</h3>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
-                  gap: '15px' 
-                }}>
+              <div className="voyage-detail-media-block">
+                <h3>Photos ({images.length})</h3>
+                <div className="voyage-detail-media-grid voyage-detail-media-grid-images">
                   {images.map((image, index) => (
                     <div
                       key={image.id}
-                      style={{
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        transition: 'transform 0.2s'
-                      }}
+                      className="voyage-detail-media-thumb"
                       onClick={() => openMediaModal(image)}
-                      onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                     >
                       <img
                         src={image.fichier_url}
                         alt={image.titre || `Image ${index + 1}`}
-                        style={{
-                          width: '100%',
-                          height: '150px',
-                          objectFit: 'cover'
-                        }}
+                        className="voyage-detail-media-img"
                       />
                     </div>
                   ))}
                 </div>
               </div>
             )}
-
             {/* Vidéos */}
             {videos.length > 0 && (
-              <div>
-                <h3 style={{ marginBottom: '15px', color: '#495057' }}>Vidéos ({videos.length})</h3>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-                  gap: '20px' 
-                }}>
+              <div className="voyage-detail-media-block">
+                <h3>Vidéos ({videos.length})</h3>
+                <div className="voyage-detail-media-grid voyage-detail-media-grid-videos">
                   {videos.map((video, index) => (
                     <div
                       key={video.id}
-                      style={{
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        transition: 'transform 0.2s'
-                      }}
+                      className="voyage-detail-media-thumb"
                       onClick={() => openMediaModal(video)}
-                      onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-                      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                     >
                       <video
                         src={video.fichier_url}
-                        style={{
-                          width: '100%',
-                          height: '200px',
-                          objectFit: 'cover'
-                        }}
+                        className="voyage-detail-media-video"
                         controls
                         preload="metadata"
                       />
@@ -317,19 +207,9 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
         )}
 
         {/* Informations du lieu */}
-        <div style={{ 
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '30px',
-          marginBottom: '30px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{ marginBottom: '20px', color: '#333' }}>Lieu visité</h2>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1fr 1fr', 
-            gap: '20px' 
-          }}>
+        <div className="voyage-detail-section">
+          <h2 className="voyage-detail-section-title">Lieu visité</h2>
+          <div className="voyage-detail-lieu-grid">
             <div>
               <strong>Ville :</strong> {voyage.lieu.nom_ville}
             </div>
@@ -349,72 +229,32 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
       {/* Modal pour afficher les médias en grand */}
       {selectedMedia && (
         <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.9)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000,
-            padding: '20px'
-          }}
+          className="voyage-detail-media-modal"
           onClick={closeMediaModal}
         >
-          <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }}>
+          <div className="voyage-detail-media-modal-content">
             <button
+              className="voyage-detail-media-modal-close"
               onClick={closeMediaModal}
-              style={{
-                position: 'absolute',
-                top: '-40px',
-                right: '0',
-                backgroundColor: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                fontSize: '20px',
-                cursor: 'pointer',
-                zIndex: 2001
-              }}
             >
               ✕
             </button>
-            
             {selectedMedia.type_media === 'image' ? (
               <img
                 src={selectedMedia.fichier_url}
                 alt={selectedMedia.titre || 'Image'}
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain'
-                }}
+                className="voyage-detail-media-modal-img"
               />
             ) : (
               <video
                 src={selectedMedia.fichier_url}
                 controls
                 autoPlay
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%'
-                }}
+                className="voyage-detail-media-modal-video"
               />
             )}
-            
             {selectedMedia.titre && (
-              <div style={{
-                position: 'absolute',
-                bottom: '-40px',
-                left: '0',
-                color: 'white',
-                fontSize: '1.1em',
-                fontWeight: 'bold'
-              }}>
+              <div className="voyage-detail-media-modal-title">
                 {selectedMedia.titre}
               </div>
             )}
@@ -425,4 +265,4 @@ const VoyageDetail = ({ voyageId, onNavigateBack, setViewingUserId, setCurrentPa
   );
 };
 
-export default VoyageDetail; 
+export default VoyageDetail;
