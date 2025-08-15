@@ -152,7 +152,8 @@ const handleUserClick = (userId) => {
               {voyage.utilisateur?.username || 'Utilisateur'}
             </span></h2>
 
-            <p className="voyage-country">Créé le : {voyage.lieu.date_creation ? formatDate(voyage.lieu.date_creation) : 'Non spécifié'}</p>
+            <p className="voyage-country">Créé le {formatDate(voyage.date_creation)}
+            </p>
           </div>
         </div>
       </div>

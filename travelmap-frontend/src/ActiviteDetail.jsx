@@ -281,7 +281,7 @@ const ActiviteDetail = ({ activiteId, onNavigateBack, onNavigateToLieu, setViewi
                 {activite.cree_par?.username || 'Utilisateur'}
               </span>
             </h2>
-            <p className="voyage-country">Créée le : {formatDate(activite.date_creation)}</p>
+            <p className="voyage-country">Créée le {formatDate(activite.date_creation)}</p>
           </div>
         </div>
       </div>

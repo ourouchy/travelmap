@@ -1154,14 +1154,6 @@ button:active {
   color: #6c757d;
 }
 
-.activity-stats {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  font-size: 0.9em;
-  color: #6c757d;
-}
 
 .average-rating {
   background-color: #e3f2fd;

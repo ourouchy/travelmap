@@ -154,16 +154,8 @@ const UserPublicProfile = ({ userId, onNavigateBack, setCurrentPage }) => {
 
       <div className="form-group">
         <h3>Statistiques</h3>
-        <div className="stats-grid">
-          <div className="stat-item">
-            <div className="stat-value">✈️ {userProfile.nombre_voyages}</div>
-            <div className="stat-label">Voyages</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-value">🎭 {userProfile.nombre_activites_creees}</div>
-            <div className="stat-label">Activités créées</div>
-          </div>
-        </div>
+            <div>✈️ {userProfile.nombre_voyages} Voyages</div>
+            <div>🎭 {userProfile.nombre_activites_creees} Activités créées</div>
       </div>
 
       {userProfile.pays_visites && userProfile.pays_visites.length > 0 && (
@@ -176,30 +168,17 @@ const UserPublicProfile = ({ userId, onNavigateBack, setCurrentPage }) => {
               width="100%"
             />
           </div>
-          <div className="map-legend">
-            <div className="legend-item">
-              <div className="legend-color visited"></div>
               <span>Pays visités ({userProfile.pays_visites.length})</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color not-visited"></div>
-              <span>Pays non visités</span>
-            </div>
-          </div>
         </div>
       )}
 
-      <div className="form-group" style={{ display: 'flex', gap: '1rem' }}>
+      <div className="actions" >
         <button 
-          onClick={() => setCurrentPage('Index')} 
-          className="auth-button"
-        >
+          onClick={() => setCurrentPage('Index')}>
           Voir les voyages
         </button>
         <button 
-          onClick={() => setCurrentPage('Activites')} 
-          className="auth-button"
-        >
+          onClick={() => setCurrentPage('Activites')}>
           Voir les activités
         </button>
       </div>
