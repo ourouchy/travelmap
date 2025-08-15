@@ -106,11 +106,12 @@ const Favoris = ({ onNavigateBack, onNavigateToLieu }) => {
           <div className="voyage-grid">
             {favoris.map((favori) => (
               <div key={favori.id} className="dashboard-card card-hover">
-                <div className="dashboard-header">
+                <div>
+                  <div></div>
                   <h3>{favori.lieu.nom_ville}</h3>
-                  <div className="voyage-rating">
+                  <p>
                     {favori.lieu.pays.nom}
-                  </div>
+                  </p>
                 </div>
 
                 <div className="voyage-comment">

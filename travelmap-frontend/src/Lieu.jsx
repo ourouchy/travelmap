@@ -1181,7 +1181,7 @@ const ArrowDownSVG = () => (
                       className="dashboard-card card-hover"
                       onClick={() => handleActiviteClick(activite.id)}
                     >
-                  <div className="activity-header">
+                  <div className="dashboard-header">
                     <h3>🎯 {activite.titre}</h3>
                     {activite.note_moyenne && (
                       <div className="voyage-rating">

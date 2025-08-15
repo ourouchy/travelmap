@@ -1333,15 +1333,11 @@ const clearFiles = () => {
 
           {/* Informations de l'activité */}
           <div className="activity-info">
-            <span>🏙️ {activite.lieu?.nom_ville}, {activite.lieu?.pays?.nom}</span>
+            <span>📊 {activite.nombre_notes || 0} avis</span>
             <span>📅 {new Date(activite.date_creation).toLocaleDateString('fr-FR')}</span>
           </div>
-
-          {/* Statistiques des notes */}
-          <div className="activity-stats">
-            <span>
-              📊 {activite.nombre_notes || 0} avis
-            </span>
+          <div>
+            <span> 🏙️ {activite.lieu?.nom_ville}, {activite.lieu?.pays?.nom}</span>
             {activite.note_moyenne && (
               <span className="average-rating">
                 Note moyenne: {activite.note_moyenne.toFixed(1)}/5
